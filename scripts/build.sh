@@ -508,6 +508,10 @@ build_extension_host_component() {
         execute_cmd "npm run build:extension" "Extension Host build (release)"
     fi
     
+    # Generate production dependencies list for IDEA plugin build
+    log_info "Generating production dependencies list..."
+    execute_cmd "npm ls --prod --depth=10 --parseable > '$IDEA_BUILD_DIR/prodDep.txt'" "production dependencies list"
+    
     # Copy to output
     local host_output="$EXTENSION_OUTPUT_DIR/extension_host"
     ensure_dir "$host_output"
