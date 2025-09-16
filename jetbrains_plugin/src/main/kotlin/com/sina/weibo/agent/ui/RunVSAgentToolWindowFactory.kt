@@ -64,6 +64,7 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
         }
 
         toolWindow.setTitleActions(titleActions)
+        toolWindow.stripeTitle = "Roo Code"
 
         // webview panel
         val toolWindowContent = RunVSAgentToolWindowContent(project, toolWindow)
@@ -523,7 +524,7 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             isFocusPainted = false
             border = javax.swing.BorderFactory.createEmptyBorder(6, 12, 6, 12)
             addActionListener {
-                BrowserUtil.browse("https://github.com/wecode-ai/RunVSAgent/blob/main/docs/KNOWN_ISSUES.md")
+                BrowserUtil.browse("https://github.com/RooVetGit/Roo-Code/blob/main/docs/KNOWN_ISSUES.md")
             }
         }
 
@@ -1291,8 +1292,8 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
          */
         private fun showDebugInfo() {
             val debugText = """
-                RunVSAgent Debug Information
-                ============================
+                Roo Code Debug Information
+                ==========================
                 
                 🚀 Plugin Status: ${if (configManager.isConfigurationLoaded() && configManager.isConfigurationValid()) "Loaded and Valid" else "Not Loaded or Invalid"}
                 

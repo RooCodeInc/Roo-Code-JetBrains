@@ -11,27 +11,27 @@ SPDX-License-Identifier: Apache-2.0
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>RunVSAgent</name>
+    <name>Roo Code</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor url="https://weibo.com">WeCode-AI</vendor>
+    <vendor url="https://roo.dev">Roo Code</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-        <h1>RunVSAgent - Run VSCode-based Coding Agents in JetBrains IDEs</h1>
-        <p>RunVSAgent is an innovative cross-platform development tool that enables developers to run VSCode-based coding agents and extensions within JetBrains IDEs (IntelliJ IDEA, WebStorm, PyCharm, etc.) or other IDE platforms.</p>
+        <h1>Roo Code - Your AI-Powered Coding Assistant for JetBrains IDEs</h1>
+        <p>Roo Code brings powerful AI coding capabilities directly into your JetBrains development environment, providing intelligent assistance for all your development needs.</p>
         
         <h2>Core Features</h2>
         <ul>
-            <li><strong>VSCode Agent Compatibility</strong>: Seamlessly run VSCode-based coding agents in JetBrains IDEs</li>
-            <li><strong>Cross-IDE Development</strong>: Unified agent experience across different IDE platforms</li>
-            <li><strong>AI-Powered Assistance</strong>: Leverage advanced AI coding assistants for intelligent code generation</li>
+            <li><strong>Natural Language Code Generation</strong>: Write code using simple descriptions and let Roo Code do the rest</li>
+            <li><strong>Intelligent Context Awareness</strong>: Understands your entire codebase to provide relevant suggestions</li>
+            <li><strong>AI-Powered Assistance</strong>: Leverage advanced AI for code generation, refactoring, and improvements</li>
         </ul>
         
         <h2>Supported IDEs</h2>
-        <p>RunVSAgent currently supports the following JetBrains IDE series:</p>
+        <p>Roo Code currently supports the following JetBrains IDE series:</p>
         <ul>
             <li><strong>IntelliJ IDEA</strong> (Ultimate & Community)</li>
             <li><strong>WebStorm</strong> - JavaScript and TypeScript development</li>
@@ -45,10 +45,12 @@ SPDX-License-Identifier: Apache-2.0
             <li><strong>Android Studio</strong> - Android development</li>
         </ul>
         
-        <h2>Supported Agents</h2>
+        <h2>Key Capabilities</h2>
         <ul>
-            <li><strong>Roo Code</strong>: Advanced AI-powered coding assistant with intelligent code generation and refactoring capabilities</li>
-            <li><strong>Custom Extensions</strong>: Support for custom AI coding assistants</li>
+            <li><strong>Code Generation</strong>: Generate complete functions, classes, and even entire files from descriptions</li>
+            <li><strong>Automated Refactoring</strong>: Improve code quality with AI-powered refactoring suggestions</li>
+            <li><strong>Bug Detection & Fixes</strong>: Identify and fix potential issues before they become problems</li>
+            <li><strong>Documentation Generation</strong>: Automatically generate comprehensive documentation</li>
         </ul>
         
         <h2>Requirements</h2>
@@ -59,30 +61,21 @@ SPDX-License-Identifier: Apache-2.0
         
         <h2>Benefits</h2>
         <ul>
-            <li><strong>Increased Productivity</strong>: Access powerful AI coding assistants without leaving your preferred IDE</li>
-            <li><strong>Unified Workflow</strong>: Maintain a consistent development experience across different platforms</li>
-            <li><strong>Extensible Architecture</strong>: Support for new agents and extensions as they become available</li>
+            <li><strong>Increased Productivity</strong>: Write code faster with intelligent AI assistance</li>
+            <li><strong>Improved Code Quality</strong>: Get suggestions for better patterns and practices</li>
+            <li><strong>Seamless Integration</strong>: Works directly within your JetBrains IDE</li>
         </ul>
         
    ]]></description>
    
    <!-- Change notes for the plugin -->
    <change-notes><![CDATA[
-        <h3>Version 0.2.2</h3>
+        <h3>Latest Version</h3>
         <ul>
-            <li>Support Kilo Code</li>
+            <li>Enhanced Roo Code integration for JetBrains IDEs</li>
+            <li>Improved performance and stability</li>
+            <li>Seamless AI-powered development experience</li>
         </ul>
-        <h3>Version 0.2.1</h3>
-        <ul>
-            <li>Introduce specific context menus and operations for extension</li>
-            <li>Update roo-code version</li>
-        </ul>
-        <h3>Version 0.2.0</h3>
-        <ul>
-            <li>Support the Cline plugin and allow switching between multiple plugins.</li>
-            <li>Important: The storage path has changed in the new version. Therefore, before upgrading, please use Roo Code’s Export Settings feature to back up your settings.</li>
-        </ul>
-
 
    ]]></change-notes>
 
@@ -100,7 +93,7 @@ SPDX-License-Identifier: Apache-2.0
         <toolWindow factoryClass="com.sina.weibo.agent.ui.RunVSAgentToolWindowFactory"
                     id="RunVSAgent"
                     secondary="true"
-                    icon="/icons/wecoder-window.svg"
+                    icon="/icons/roo-logo.svg"
                     anchor="right" />
         <notificationGroup id="RunVSAgent"
                            displayType="BALLOON"/>
@@ -135,7 +128,7 @@ SPDX-License-Identifier: Apache-2.0
                     description="Check extension status and diagnose issues" />
         </group>
 
-        <group id="RunVSAgent.RightClickMenu" text="RunVSAgent" description="RunVSAgent main menu"  icon="/icons/weibo_logo_13px.svg" popup="true">
+        <group id="RunVSAgent.RightClickMenu" text="Roo Code" description="Roo Code AI Assistant"  icon="/icons/roo-logo.svg" popup="true">
             <group id="RunVSAgent.RightClick.Chat" class="com.sina.weibo.agent.extensions.ui.contextmenu.DynamicExtensionContextMenuGroup"
                    text="Extension Actions" description="Dynamic extension-specific context menu actions"/>
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
@@ -157,7 +150,7 @@ SPDX-License-Identifier: Apache-2.0
         </group>
 
         <!-- Main menu integration -->
-        <group id="RunVSAgent.MainMenu" text="RunVSAgent" description="RunVSAgent main menu">
+        <group id="RunVSAgent.MainMenu" text="Roo Code" description="Roo Code AI Assistant">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <reference ref="RunVSAgent.extensionSwitcher" />
             <group id="RunVSAgent.MainMenu.DynamicExtensionActions"
