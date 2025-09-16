@@ -91,28 +91,17 @@ class WecoderPlugin : StartupActivity.DumbAware {
             
             // 3. Validate configuration validity
             if (!canProceedWithInitialization(configManager)) {
-                // Check if auto-creation of default configuration is allowed (controlled by system property)
-                val allowAutoCreate = System.getProperty("runvsagent.auto.create.config", "false").toBoolean()
-                if (allowAutoCreate) {
-                    LOG.info("Auto-creation of default configuration is enabled, attempting to create...")
-                    configManager.createDefaultConfiguration()
-                    
-                    // Validate configuration again
-                    if (canProceedWithInitialization(configManager)) {
-                        LOG.info("Default configuration created successfully, continuing initialization")
-                    } else {
-                        LOG.warn("Failed to create valid configuration, plugin initialization paused")
-                        LOG.warn("Please manually create or fix ${PluginConstants.ConfigFiles.MAIN_CONFIG_FILE} file")
-                        LOG.warn("Then restart the IDE or reload the project to continue")
-                        return // Pause initialization
-                    }
+                // Always auto-create default configuration with Roo Code
+                LOG.info("No valid configuration found, auto-creating default Roo Code configuration...")
+                configManager.createDefaultConfiguration()
+                
+                // Validate configuration again
+                if (canProceedWithInitialization(configManager)) {
+                    LOG.info("Default Roo Code configuration created successfully, continuing initialization")
                 } else {
-                    // Don't auto-create default configuration, truly pause initialization
-                    LOG.warn("Plugin initialization paused due to invalid configuration")
-                    LOG.warn("To enable auto-creation of default configuration, set system property: -Drunvsagent.auto.create.config=true")
-                    LOG.warn("Or manually create/fix ${PluginConstants.ConfigFiles.MAIN_CONFIG_FILE} file")
-                    LOG.warn("Then restart the IDE or reload the project to continue")
-                    return // Truly pause initialization
+                    LOG.error("Failed to create valid configuration even after auto-creation")
+                    LOG.error("Please check file permissions for: ${configManager.getConfigurationFilePath()}")
+                    return // Pause initialization
                 }
             }
             

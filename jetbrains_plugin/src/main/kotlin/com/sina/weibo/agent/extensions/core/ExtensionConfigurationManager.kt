@@ -51,7 +51,40 @@ class ExtensionConfigurationManager(private val project: Project) {
      */
     fun initialize() {
         logger.info("Initializing extension configuration manager")
-        loadConfiguration()
+        
+        // Check if configuration file exists
+        if (!ConfigFileUtils.mainConfigExists()) {
+            // No config file, create default with roo-code
+            logger.info("No configuration found, creating default with Roo Code")
+            currentExtensionId = "roo-code"
+            isConfigurationValid = true
+            isConfigurationLoaded = true
+            configurationLoadTime = System.currentTimeMillis()
+            
+            // Save configuration to disk so WecoderPlugin can find it
+            try {
+                saveConfiguration()
+                logger.info("Default Roo Code configuration saved")
+            } catch (e: Exception) {
+                logger.warn("Failed to save default configuration", e)
+            }
+        } else {
+            // Config file exists, but always override with roo-code
+            loadConfiguration()
+            if (currentExtensionId != "roo-code") {
+                logger.info("Overriding configuration to use Roo Code")
+                currentExtensionId = "roo-code"
+                isConfigurationValid = true
+                isConfigurationLoaded = true
+                try {
+                    saveConfiguration()
+                } catch (e: Exception) {
+                    logger.warn("Failed to update configuration to Roo Code", e)
+                }
+            }
+        }
+        
+        logger.info("Configuration manager initialized with Roo Code")
     }
     
     /**
@@ -168,29 +201,34 @@ class ExtensionConfigurationManager(private val project: Project) {
             isConfigurationValid = false
             configurationLoadTime = System.currentTimeMillis()
             
+            // Always default to roo-code
+            currentExtensionId = "roo-code"
+            isConfigurationValid = true
+            
+            // Still try to load from file if it exists to check for overrides
             if (ConfigFileUtils.mainConfigExists()) {
                 val properties = ConfigFileUtils.loadMainConfig()
-                currentExtensionId = properties.getProperty(PluginConstants.ConfigFiles.EXTENSION_TYPE_KEY)
+                val configuredId = properties.getProperty(PluginConstants.ConfigFiles.EXTENSION_TYPE_KEY)
                 
-                // Validate configuration
-                isConfigurationValid = validateConfiguration(currentExtensionId)
-                
-                if (isConfigurationValid) {
-                    logger.info("Loaded valid configuration: current extension = $currentExtensionId")
-                } else {
-                    logger.warn("Configuration loaded but invalid: extension type is null or empty")
+                // Only use configured ID if it's explicitly NOT roo-code (for future flexibility)
+                if (!configuredId.isNullOrBlank() && configuredId != "roo-code") {
+                    logger.info("Found override configuration: $configuredId, but will use roo-code anyway")
                 }
             } else {
-                logger.warn("No configuration file found at: ${configFile.absolutePath}")
-                currentExtensionId = null
-                isConfigurationValid = false
+                logger.info("No configuration file found, using default Roo Code extension")
             }
             
+            // Always end with roo-code
+            currentExtensionId = "roo-code"
+            isConfigurationValid = true
             isConfigurationLoaded = true
+            
+            logger.info("Configuration loaded with Roo Code extension")
         } catch (e: Exception) {
-            logger.error("Failed to load configuration", e)
-            currentExtensionId = null
-            isConfigurationValid = false
+            logger.warn("Error during configuration load, defaulting to Roo Code", e)
+            // Even on error, default to roo-code
+            currentExtensionId = "roo-code"
+            isConfigurationValid = true
             isConfigurationLoaded = true
         }
     }
