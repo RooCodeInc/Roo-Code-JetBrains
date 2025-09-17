@@ -34,13 +34,37 @@ class RooCodeButtonProvider : ExtensionButtonProvider {
     
     override fun getButtons(project: Project): List<AnAction> {
         // Note: project parameter kept for future extensibility
+        // Order matches VS Code: New Task, Marketplace, Settings, Cloud (visible)
+        // History, Prompts, MCP, Open in Editor (overflow menu)
         return listOf(
             PlusButtonClickAction(),
+            MarketplaceButtonClickAction(),
+            SettingsButtonClickAction(),
+            CloudButtonClickAction(),
+            HistoryButtonClickAction(),
             PromptsButtonClickAction(),
             MCPButtonClickAction(),
-            HistoryButtonClickAction(),
+            OpenInEditorButtonClickAction()
+        )
+    }
+    
+    override fun getVisibleButtons(project: Project): List<AnAction> {
+        // First 4 buttons are directly visible in the toolbar
+        return listOf(
+            PlusButtonClickAction(),
             MarketplaceButtonClickAction(),
-            SettingsButtonClickAction()
+            SettingsButtonClickAction(),
+            CloudButtonClickAction()
+        )
+    }
+    
+    override fun getOverflowButtons(project: Project): List<AnAction> {
+        // Remaining buttons go into the overflow menu
+        return listOf(
+            HistoryButtonClickAction(),
+            PromptsButtonClickAction(),
+            MCPButtonClickAction(),
+            OpenInEditorButtonClickAction()
         )
     }
     
@@ -49,15 +73,28 @@ class RooCodeButtonProvider : ExtensionButtonProvider {
     }
     
     /**
-     * Roo Code button configuration - shows all buttons (full-featured).
+     * Roo Code button configuration - shows buttons matching VS Code layout.
+     * Directly visible: New Task, Marketplace, Settings, Cloud
+     * In overflow menu: History, Prompts, MCP Servers, Open in Editor
      */
     private class RooCodeButtonConfiguration : ButtonConfiguration {
         override fun isButtonVisible(buttonType: ButtonType): Boolean {
-            return true // All buttons are visible for Roo Code
+            // All buttons are visible, but some are in overflow menu
+            return true
         }
         
         override fun getVisibleButtons(): List<ButtonType> {
-            return ButtonType.values().toList()
+            // Order matters: these appear directly in the toolbar
+            return listOf(
+                ButtonType.PLUS,          // New Task
+                ButtonType.MARKETPLACE,   // Marketplace
+                ButtonType.SETTINGS,      // Settings
+                ButtonType.CLOUD,         // Cloud
+                ButtonType.HISTORY,       // History (overflow)
+                ButtonType.PROMPTS,       // Prompts (overflow)
+                ButtonType.MCP,          // MCP Servers (overflow)
+                ButtonType.OPEN_IN_EDITOR // Open in Editor (overflow)
+            )
         }
     }
 
@@ -70,9 +107,9 @@ class RooCodeButtonProvider : ExtensionButtonProvider {
         private val commandId: String = "roo-cline.plusButtonClicked"
 
         init {
-            templatePresentation.icon = AllIcons.General.Add
+            templatePresentation.icon = AllIcons.Actions.Edit
             templatePresentation.text = "New Task"
-            templatePresentation.description = "New task"
+            templatePresentation.description = "Start a new AI task"
         }
 
         /**
@@ -95,9 +132,9 @@ class RooCodeButtonProvider : ExtensionButtonProvider {
         private val commandId: String = "roo-cline.promptsButtonClicked"
 
         init {
-            templatePresentation.icon = AllIcons.General.Information
-            templatePresentation.text = "Prompt"
-            templatePresentation.description = "Prompts"
+            templatePresentation.icon = AllIcons.Nodes.Folder
+            templatePresentation.text = "Prompts"
+            templatePresentation.description = "Manage and organize prompts"
         }
 
         /**
@@ -121,8 +158,8 @@ class RooCodeButtonProvider : ExtensionButtonProvider {
 
         init {
             templatePresentation.icon = AllIcons.Webreferences.Server
-            templatePresentation.text = "MCP Server"
-            templatePresentation.description = "MCP server"
+            templatePresentation.text = "MCP Servers"
+            templatePresentation.description = "Configure MCP servers"
         }
 
         /**
@@ -195,9 +232,9 @@ class RooCodeButtonProvider : ExtensionButtonProvider {
         private val commandId: String = "roo-cline.marketplaceButtonClicked"
 
         init {
-            templatePresentation.icon = AllIcons.Actions.Install
-            templatePresentation.text = "MCP Marketplace"
-            templatePresentation.description = "Marketplace"
+            templatePresentation.icon = AllIcons.Nodes.Plugin
+            templatePresentation.text = "Marketplace"
+            templatePresentation.description = "Browse and install MCP servers"
         }
 
         /**
@@ -207,6 +244,56 @@ class RooCodeButtonProvider : ExtensionButtonProvider {
          */
         override fun actionPerformed(e: AnActionEvent) {
             logger.info("Marketplace button clicked")
+            executeCommand(commandId, e.project)
+        }
+    }
+
+    /**
+     * Action that handles clicks on the Cloud button in the UI.
+     * Executes the corresponding VSCode command when triggered.
+     */
+    class CloudButtonClickAction : AnAction() {
+        private val logger: Logger = Logger.getInstance(CloudButtonClickAction::class.java)
+        private val commandId: String = "roo-cline.cloudButtonClicked"
+
+        init {
+            templatePresentation.icon = AllIcons.RunConfigurations.Remote
+            templatePresentation.text = "Cloud"
+            templatePresentation.description = "Cloud services and sync"
+        }
+
+        /**
+         * Performs the action when the Cloud button is clicked.
+         *
+         * @param e The action event containing context information
+         */
+        override fun actionPerformed(e: AnActionEvent) {
+            logger.info("Cloud button clicked")
+            executeCommand(commandId, e.project)
+        }
+    }
+
+    /**
+     * Action that handles clicks on the Open in Editor button in the UI.
+     * Executes the corresponding VSCode command when triggered.
+     */
+    class OpenInEditorButtonClickAction : AnAction() {
+        private val logger: Logger = Logger.getInstance(OpenInEditorButtonClickAction::class.java)
+        private val commandId: String = "roo-cline.popoutButtonClicked"
+
+        init {
+            templatePresentation.icon = AllIcons.Ide.External_link_arrow
+            templatePresentation.text = "Open in Editor"
+            templatePresentation.description = "Open chat in a separate editor tab"
+        }
+
+        /**
+         * Performs the action when the Open in Editor button is clicked.
+         *
+         * @param e The action event containing context information
+         */
+        override fun actionPerformed(e: AnActionEvent) {
+            logger.info("Open in Editor button clicked")
             executeCommand(commandId, e.project)
         }
     }

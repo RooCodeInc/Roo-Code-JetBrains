@@ -8,12 +8,11 @@ import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.DumbAware
+import com.intellij.icons.AllIcons
 import com.sina.weibo.agent.extensions.core.ExtensionManager
 import com.sina.weibo.agent.extensions.config.ExtensionProvider
 import com.sina.weibo.agent.extensions.common.ExtensionChangeListener
-import com.sina.weibo.agent.extensions.plugin.cline.ClineButtonProvider
 import com.sina.weibo.agent.extensions.plugin.roo.RooCodeButtonProvider
-import com.sina.weibo.agent.extensions.plugin.kilo.KiloCodeButtonProvider
 import com.sina.weibo.agent.extensions.ui.buttons.ExtensionButtonProvider
 
 /**
@@ -32,7 +31,8 @@ class DynamicExtensionActionsGroup : DefaultActionGroup(), DumbAware, ActionUpda
      */
     private var cachedButtonProvider: ExtensionButtonProvider? = null
     private var cachedExtensionId: String? = null
-    private var cachedActions: List<AnAction>? = null
+    private var cachedVisibleActions: List<AnAction>? = null
+    private var cachedOverflowActions: List<AnAction>? = null
     
     override fun update(e: AnActionEvent) {
         val project = e.getData(CommonDataKeys.PROJECT)
@@ -49,18 +49,26 @@ class DynamicExtensionActionsGroup : DefaultActionGroup(), DumbAware, ActionUpda
                 val extensionId = currentProvider.getExtensionId()
                 
                 // 检查是否需要更新缓存
-                if (cachedExtensionId != extensionId || cachedActions == null) {
+                if (cachedExtensionId != extensionId || cachedVisibleActions == null) {
                     updateCachedActions(currentProvider, project)
                 }
                 
                 // 使用缓存的actions
-                if (cachedActions != null) {
+                if (cachedVisibleActions != null) {
                     removeAll()
-                    cachedActions!!.forEach { action ->
+                    
+                    // Add visible buttons directly to toolbar
+                    cachedVisibleActions!!.forEach { action ->
                         add(action)
                     }
+                    
+                    // Add overflow menu if there are overflow buttons
+                    if (!cachedOverflowActions.isNullOrEmpty()) {
+                        add(createOverflowMenu())
+                    }
+                    
                     e.presentation.isVisible = true
-                    logger.debug("Using cached actions for extension: $extensionId")
+                    logger.debug("Using cached actions for extension: $extensionId with ${cachedVisibleActions!!.size} visible and ${cachedOverflowActions?.size ?: 0} overflow actions")
                 }
             } else {
                 e.presentation.isVisible = false
@@ -78,49 +86,42 @@ class DynamicExtensionActionsGroup : DefaultActionGroup(), DumbAware, ActionUpda
         // 创建新的ButtonProvider实例（仅在扩展类型改变时）
         val buttonProvider = when (extensionId) {
             "roo-code" -> RooCodeButtonProvider()
-            "cline" -> ClineButtonProvider()
-            "kilo-code" -> KiloCodeButtonProvider()
             else -> null
         }
         
         if (buttonProvider != null) {
-            // 创建并缓存actions
-            val actions = buttonProvider.getButtons(project)
+            // 创建并缓存 visible 和 overflow actions
+            val visibleActions = buttonProvider.getVisibleButtons(project)
+            val overflowActions = buttonProvider.getOverflowButtons(project)
             
             // 更新缓存
             cachedButtonProvider = buttonProvider
             cachedExtensionId = extensionId
-            cachedActions = actions
+            cachedVisibleActions = visibleActions
+            cachedOverflowActions = overflowActions
             
-            logger.debug("Updated cached actions for extension: $extensionId, count: ${actions.size}")
+            logger.debug("Updated cached actions for extension: $extensionId, visible: ${visibleActions.size}, overflow: ${overflowActions.size}")
         }
     }
     
     /**
-     * Loads dynamic actions into this action group based on the current extension provider.
-     *
-     * @param provider The current extension provider
-     * @param project The current project
+     * Creates an overflow menu (three dots) containing additional actions
      */
-    private fun loadDynamicActions(provider: ExtensionProvider, project: Project) {
-        val extensionId = provider.getExtensionId()
-
-        val buttonProvider = when (extensionId) {
-            "roo-code" -> RooCodeButtonProvider()
-            "cline" -> ClineButtonProvider()
-            "kilo-code" -> KiloCodeButtonProvider()
-            else -> null
+    private fun createOverflowMenu(): AnAction {
+        return object : DefaultActionGroup("More Actions", true), DumbAware {
+            init {
+                templatePresentation.icon = AllIcons.Actions.More
+                templatePresentation.text = ""  // No text, just icon
+                templatePresentation.description = "More actions"
+                
+                // Add all overflow actions to this group
+                cachedOverflowActions?.forEach { action ->
+                    add(action)
+                }
+            }
         }
-        // Create actions based on extension type
-        val actions = buttonProvider?.getButtons(project) ?: emptyList()
-        
-        // Add all actions to the group
-        actions.forEach { action ->
-            add(action)
-        }
-        
-        logger.debug("Added ${actions.size} actions for extension: $extensionId")
     }
+    
 
     /**
      * Specifies which thread should be used for updating this action.

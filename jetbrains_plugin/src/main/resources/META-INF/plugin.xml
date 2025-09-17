@@ -120,7 +120,6 @@ SPDX-License-Identifier: Apache-2.0
                    class="com.sina.weibo.agent.extensions.ui.actions.DynamicExtensionActionsGroup"
                    text="Extension Actions"
                    description="Dynamic extension-specific actions" />
-            <reference ref="RunVSAgent.extensionSwitcher" />
             <action id="RunVSAgent.extensionStatusChecker"
                     icon="AllIcons.General.InspectionsOK"
                     class="com.sina.weibo.agent.extensions.ui.actions.ExtensionStatusChecker"

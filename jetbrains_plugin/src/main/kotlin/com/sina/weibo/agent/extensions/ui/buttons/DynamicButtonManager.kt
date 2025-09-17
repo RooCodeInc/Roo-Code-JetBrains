@@ -11,9 +11,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.sina.weibo.agent.extensions.core.ExtensionManager
-import com.sina.weibo.agent.extensions.plugin.cline.ClineButtonProvider
 import com.sina.weibo.agent.extensions.plugin.roo.RooCodeButtonProvider
-import com.sina.weibo.agent.extensions.plugin.kilo.KiloCodeButtonProvider
 
 /**
  * Dynamic button manager that controls which buttons are visible based on the current extension type.
@@ -92,8 +90,6 @@ class DynamicButtonManager(private val project: Project) {
         
         return when (extensionId) {
             "roo-code" -> RooCodeButtonProvider()
-            "cline" -> ClineButtonProvider()
-            "kilo-code" -> KiloCodeButtonProvider()
             // TODO: Add other button providers as they are implemented
             // "copilot" -> CopilotButtonProvider()
             // "claude" -> ClaudeButtonProvider()
@@ -153,11 +149,13 @@ class DynamicButtonManager(private val project: Project) {
  */
 enum class ButtonType {
     PLUS,
+    MARKETPLACE,
+    SETTINGS,
+    CLOUD,
+    HISTORY,
     PROMPTS,
     MCP,
-    HISTORY,
-    MARKETPLACE,
-    SETTINGS
+    OPEN_IN_EDITOR
 }
 
 /**
@@ -177,19 +175,22 @@ class DefaultButtonConfiguration : ButtonConfiguration {
     override fun isButtonVisible(buttonType: ButtonType): Boolean {
         return when (buttonType) {
             ButtonType.PLUS,
-            ButtonType.PROMPTS,
-            ButtonType.SETTINGS -> true
-            ButtonType.MCP,
+            ButtonType.MARKETPLACE,
+            ButtonType.SETTINGS,
+            ButtonType.CLOUD -> true
             ButtonType.HISTORY,
-            ButtonType.MARKETPLACE -> false
+            ButtonType.PROMPTS,
+            ButtonType.MCP,
+            ButtonType.OPEN_IN_EDITOR -> false
         }
     }
     
     override fun getVisibleButtons(): List<ButtonType> {
         return listOf(
             ButtonType.PLUS,
-            ButtonType.PROMPTS,
-            ButtonType.SETTINGS
+            ButtonType.MARKETPLACE,
+            ButtonType.SETTINGS,
+            ButtonType.CLOUD
         )
     }
 }

@@ -40,6 +40,27 @@ interface ExtensionButtonProvider {
      * @return List of AnAction instances representing the buttons
      */
     fun getButtons(project: Project): List<AnAction>
+    
+    /**
+     * Get visible buttons for the toolbar (not in overflow menu).
+     * @param project Current project
+     * @return List of AnAction instances for directly visible buttons
+     */
+    fun getVisibleButtons(project: Project): List<AnAction> {
+        // Default implementation - first 4 buttons are visible
+        return getButtons(project).take(4)
+    }
+    
+    /**
+     * Get overflow menu buttons.
+     * @param project Current project
+     * @return List of AnAction instances for overflow menu
+     */
+    fun getOverflowButtons(project: Project): List<AnAction> {
+        // Default implementation - remaining buttons go to overflow
+        val allButtons = getButtons(project)
+        return if (allButtons.size > 4) allButtons.drop(4) else emptyList()
+    }
 
     /**
      * Get button configuration for this extension.
