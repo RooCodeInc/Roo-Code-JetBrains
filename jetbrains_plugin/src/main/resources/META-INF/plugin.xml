@@ -104,23 +104,12 @@ SPDX-License-Identifier: Apache-2.0
     </extensions>
 
     <actions>
-        <action id="RunVSAgent.extensionSwitcher"
-                icon="AllIcons.Actions.Refresh"
-                class="com.sina.weibo.agent.extensions.ui.actions.ExtensionSwitcherAction"
-                text="Switch Extension Provider"
-                description="Switch to a different extension provider">
-            <override-text place="GoToAction" text="Switch Extension" />
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt S" />
-        </action>
-
-
         <!-- Dynamic toolbar group - buttons will be populated based on current extension -->
         <group id="WecoderToolbarGroup">
             <group id="RunVSAgent.DynamicExtensionActions"
                    class="com.sina.weibo.agent.extensions.ui.actions.DynamicExtensionActionsGroup"
                    text="Extension Actions"
                    description="Dynamic extension-specific actions" />
-            <reference ref="RunVSAgent.extensionSwitcher" />
             <action id="RunVSAgent.extensionStatusChecker"
                     icon="AllIcons.General.InspectionsOK"
                     class="com.sina.weibo.agent.extensions.ui.actions.ExtensionStatusChecker"
@@ -134,11 +123,6 @@ SPDX-License-Identifier: Apache-2.0
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </group>
 
-        <!-- Right-click menu for extension switching -->
-        <group id="RunVSAgent.RightClick.Extensions" text="Extensions" description="Extension management">
-            <reference ref="RunVSAgent.extensionSwitcher" />
-            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-        </group>
 
         <!-- Right-click menu for extension-specific actions -->
         <group id="RunVSAgent.RightClick.ExtensionActions" text="Extension Actions" description="Extension-specific actions">
@@ -152,7 +136,6 @@ SPDX-License-Identifier: Apache-2.0
         <!-- Main menu integration -->
         <group id="RunVSAgent.MainMenu" text="Roo Code" description="Roo Code AI Assistant">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
-            <reference ref="RunVSAgent.extensionSwitcher" />
             <group id="RunVSAgent.MainMenu.DynamicExtensionActions"
                    class="com.sina.weibo.agent.extensions.ui.actions.DynamicExtensionActionsGroup"
                    text="Extension Actions"

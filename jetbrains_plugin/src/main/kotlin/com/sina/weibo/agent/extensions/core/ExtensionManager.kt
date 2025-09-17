@@ -9,9 +9,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.sina.weibo.agent.extensions.common.ExtensionChangeListener
 import com.sina.weibo.agent.extensions.config.ExtensionProvider
-import com.sina.weibo.agent.extensions.plugin.cline.ClineExtensionProvider
 import com.sina.weibo.agent.extensions.plugin.roo.RooExtensionProvider
-import com.sina.weibo.agent.extensions.plugin.kilo.KiloCodeExtensionProvider
 import com.sina.weibo.agent.extensions.ui.buttons.DynamicButtonManager
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -107,8 +105,6 @@ class ExtensionManager(private val project: Project) {
     fun getAllExtensions(): List<ExtensionProvider> {
         return ArrayList<ExtensionProvider>().apply {
             add(RooExtensionProvider())
-            add(ClineExtensionProvider())
-            add(KiloCodeExtensionProvider())
         }
     }
     
@@ -136,8 +132,7 @@ class ExtensionManager(private val project: Project) {
         
         if (availableProviders.isNotEmpty()) {
             // Prefer roo-code as default provider
-//             val rooProvider = availableProviders.find { it.getExtensionId() == "roo-code" }
-            val rooProvider = availableProviders.find { it.getExtensionId() == "cline" }
+            val rooProvider = availableProviders.find { it.getExtensionId() == "roo-code" }
             if (rooProvider != null) {
                 currentProvider = rooProvider
                 LOG.info("Set default extension provider: roo-code (preferred)")
