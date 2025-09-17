@@ -64,6 +64,7 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
         }
 
         toolWindow.setTitleActions(titleActions)
+        toolWindow.stripeTitle = "Roo Code"
 
         // webview panel
         val toolWindowContent = RunVSAgentToolWindowContent(project, toolWindow)
@@ -137,6 +138,7 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             val osVersion = System.getProperty("os.version")
             val osArch = System.getProperty("os.arch")
             val jcefSupported = JBCefApp.isSupported()
+            val javaVersion = System.getProperty("java.version")
 
             // Check for Linux ARM system
             val isLinuxArm = osName.lowercase().contains("linux") && (osArch.lowercase().contains("aarch64") || osArch.lowercase().contains("arm"))
@@ -153,71 +155,48 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
 
                 // Header section
                 append("<div class='header'>")
-                append("<div class='title'>🚀 RunVSAgent</div>")
-                append("<div class='subtitle'>Initializing...</div>")
+                append("<div class='title'>Roo Code is initializing...</div>")
                 append("</div>")
 
-                // System info card
+                // System info card - minimal essential info
                 append("<div class='info-card'>")
-                append("<div class='card-title'>📊 System Information</div>")
                 append("<div class='info-grid'>")
 
-                // Info rows with modern styling
                 append("<div class='info-row'>")
-                append("<span class='info-label'>💻 CPU Architecture</span>")
-                append("<span class='info-value'>$osArch</span>")
+                append("<span class='info-label'>OS</span>")
+                append("<span class='info-value'>$osName $osVersion ($osArch)</span>")
                 append("</div>")
 
                 append("<div class='info-row'>")
-                append("<span class='info-label'>🖥️ Operating System</span>")
-                append("<span class='info-value'>$osName $osVersion</span>")
-                append("</div>")
-
-                append("<div class='info-row'>")
-                append("<span class='info-label'>🔧 IDE Version</span>")
+                append("<span class='info-label'>IDE</span>")
                 append("<span class='info-value version-text'>${appInfo.fullApplicationName}</span>")
                 append("</div>")
 
                 append("<div class='info-row'>")
-                append("<span class='info-label'>📦 Plugin Version</span>")
-                append("<span class='info-value'>$pluginVersion</span>")
+                append("<span class='info-label'>Plugin</span>")
+                append("<span class='info-value'>v$pluginVersion</span>")
                 append("</div>")
 
                 append("<div class='info-row'>")
-                append("<span class='info-label'>🌐 JCEF Support</span>")
-                append("<span class='info-value ${if (jcefSupported) "success" else "error"}'>${if (jcefSupported) "✓ Yes" else "✗ No"}</span>")
+                append("<span class='info-label'>Java</span>")
+                append("<span class='info-value'>$javaVersion</span>")
                 append("</div>")
 
                 append("</div>")
                 append("</div>")
 
-                // Warning messages with modern styling
+                // Warning messages - only show critical issues
                 if (isLinuxArm) {
                     append("<div class='warning-card warning'>")
-                    append("<div class='warning-header'>")
-                    append("<span class='warning-icon'>⚠️</span>")
-                    append("<span class='warning-title'>System Not Supported</span>")
-                    append("</div>")
-                    append("<div class='warning-text'>Linux ARM systems are currently not supported by this plugin.</div>")
+                    append("<div class='warning-text'>Warning: Linux ARM systems are currently not supported.</div>")
                     append("</div>")
                 }
 
                 if (!jcefSupported) {
                     append("<div class='warning-card error'>")
-                    append("<div class='warning-header'>")
-                    append("<span class='warning-icon'>❌</span>")
-                    append("<span class='warning-title'>JCEF Not Supported</span>")
-                    append("</div>")
-                    append("<div class='warning-text'>Your IDE runtime does not support JCEF. Please use a runtime that supports JCEF.</div>")
+                    append("<div class='warning-text'>Error: Your IDE runtime does not support JCEF. Please use a runtime with JCEF support.</div>")
                     append("</div>")
                 }
-
-                // Help text
-                append("<div class='help-card'>")
-                append("<div class='help-text'>")
-                append("If this interface continues to display for a long time, you can refer to the known issues documentation to check if there are any known problems.")
-                append("</div>")
-                append("</div>")
 
                 append("</body></html>")
             }
@@ -253,57 +232,43 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                     margin: 0;
                     padding: 20px;
-                    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+                    background: #1e1e1e;
                     color: #e2e8f0;
-                    border-radius: 12px;
+                    border-radius: 8px;
                 }
                 
                 .header {
                     text-align: center;
-                    margin-bottom: 30px;
+                    margin-bottom: 15px;
+                    padding: 5px;
                 }
                 
                 .title {
-                    font-size: 24px;
-                    font-weight: 600;
-                    margin-bottom: 8px;
+                    font-size: 14px;
+                    font-weight: normal;
                     color: #f8fafc;
                 }
                 
-                .subtitle {
-                    font-size: 14px;
-                    opacity: 0.9;
-                    color: #cbd5e1;
-                }
-                
                 .info-card {
-                    background: rgba(30, 41, 59, 0.8);
-                    backdrop-filter: blur(10px);
-                    border-radius: 8px;
-                    padding: 20px;
-                    margin-bottom: 20px;
-                    border: 1px solid rgba(148, 163, 184, 0.2);
-                }
-                
-                .card-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    margin-bottom: 15px;
-                    text-align: center;
-                    color: #f1f5f9;
+                    background: rgba(30, 30, 30, 0.3);
+                    backdrop-filter: none;
+                    border-radius: 4px;
+                    padding: 12px;
+                    margin-bottom: 12px;
+                    border: 1px solid rgba(148, 163, 184, 0.1);
                 }
                 
                 .info-grid {
                     display: grid;
-                    gap: 12px;
+                    gap: 8px;
                 }
                 
                 .info-row {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 8px 0;
-                    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+                    padding: 6px 0;
+                    border-bottom: 1px solid rgba(148, 163, 184, 0.05);
                 }
                 
                 .info-row:last-child {
@@ -311,14 +276,16 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                 }
                 
                 .info-label {
-                    font-weight: 500;
-                    opacity: 0.9;
-                    color: #cbd5e1;
+                    font-weight: normal;
+                    opacity: 0.7;
+                    color: #9ca3af;
+                    font-size: 12px;
                 }
                 
                 .info-value {
-                    font-weight: 600;
-                    color: #f8fafc;
+                    font-weight: normal;
+                    color: #e5e7eb;
+                    font-size: 12px;
                 }
                 
                 .version-text {
@@ -334,10 +301,10 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                 }
                 
                 .warning-card {
-                    border-radius: 8px;
-                    padding: 16px;
-                    margin-bottom: 16px;
-                    backdrop-filter: blur(10px);
+                    border-radius: 4px;
+                    padding: 8px;
+                    margin-bottom: 8px;
+                    backdrop-filter: none;
                 }
                 
                 .warning-card.warning {
@@ -371,28 +338,12 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                 }
                 
                 .warning-text {
-                    font-size: 13px;
+                    font-size: 12px;
                     opacity: 0.9;
                     line-height: 1.4;
                     color: #cbd5e1;
                 }
                 
-                .help-card {
-                    text-align: center;
-                    margin-top: 20px;
-                    padding: 16px;
-                    background: rgba(30, 41, 59, 0.6);
-                    border-radius: 8px;
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(148, 163, 184, 0.1);
-                }
-                
-                .help-text {
-                    font-size: 13px;
-                    opacity: 0.9;
-                    line-height: 1.5;
-                    color: #cbd5e1;
-                }
                 """.trimIndent()
             } else {
                 """
@@ -401,58 +352,44 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                     margin: 0;
                     padding: 20px;
-                    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+                    background: #ffffff;
                     color: #334155;
-                    border-radius: 12px;
+                    border-radius: 8px;
                 }
                 
                 .header {
                     text-align: center;
-                    margin-bottom: 30px;
+                    margin-bottom: 15px;
+                    padding: 5px;
                 }
                 
                 .title {
-                    font-size: 24px;
-                    font-weight: 600;
-                    margin-bottom: 8px;
-                    color: #1e293b;
-                }
-                
-                .subtitle {
                     font-size: 14px;
-                    opacity: 0.9;
-                    color: #64748b;
+                    font-weight: normal;
+                    color: #1e293b;
                 }
                 
                 .info-card {
-                    background: rgba(255, 255, 255, 0.8);
-                    backdrop-filter: blur(10px);
-                    border-radius: 8px;
-                    padding: 20px;
-                    margin-bottom: 20px;
+                    background: rgba(250, 250, 250, 0.9);
+                    backdrop-filter: none;
+                    border-radius: 4px;
+                    padding: 12px;
+                    margin-bottom: 12px;
                     border: 1px solid rgba(148, 163, 184, 0.2);
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                }
-                
-                .card-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    margin-bottom: 15px;
-                    text-align: center;
-                    color: #1e293b;
+                    box-shadow: none;
                 }
                 
                 .info-grid {
                     display: grid;
-                    gap: 12px;
+                    gap: 8px;
                 }
                 
                 .info-row {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 8px 0;
-                    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+                    padding: 6px 0;
+                    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
                 }
                 
                 .info-row:last-child {
@@ -460,14 +397,16 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                 }
                 
                 .info-label {
-                    font-weight: 500;
-                    opacity: 0.9;
-                    color: #64748b;
+                    font-weight: normal;
+                    opacity: 0.7;
+                    color: #6b7280;
+                    font-size: 12px;
                 }
                 
                 .info-value {
-                    font-weight: 600;
-                    color: #1e293b;
+                    font-weight: normal;
+                    color: #374151;
+                    font-size: 12px;
                 }
                 
                 .version-text {
@@ -483,11 +422,11 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                 }
                 
                 .warning-card {
-                    border-radius: 8px;
-                    padding: 16px;
-                    margin-bottom: 16px;
-                    backdrop-filter: blur(10px);
-                    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+                    border-radius: 4px;
+                    padding: 8px;
+                    margin-bottom: 8px;
+                    backdrop-filter: none;
+                    box-shadow: none;
                 }
                 
                 .warning-card.warning {
@@ -521,27 +460,9 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                 }
                 
                 .warning-text {
-                    font-size: 13px;
+                    font-size: 12px;
                     opacity: 0.9;
                     line-height: 1.4;
-                    color: #475569;
-                }
-                
-                .help-card {
-                    text-align: center;
-                    margin-top: 20px;
-                    padding: 16px;
-                    background: rgba(255, 255, 255, 0.6);
-                    border-radius: 8px;
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(148, 163, 184, 0.1);
-                    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-                }
-                
-                .help-text {
-                    font-size: 13px;
-                    opacity: 0.9;
-                    line-height: 1.5;
                     color: #475569;
                 }
                 """.trimIndent()
@@ -558,35 +479,31 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             val osName = System.getProperty("os.name")
             val osVersion = System.getProperty("os.version")
             val osArch = System.getProperty("os.arch")
+            val javaVersion = System.getProperty("java.version")
             val jcefSupported = JBCefApp.isSupported()
 
             // Check for Linux ARM system
             val isLinuxArm = osName.lowercase().contains("linux") && (osArch.lowercase().contains("aarch64") || osArch.lowercase().contains("arm"))
 
             return buildString {
-                append("RunVSAgent System Information\n")
-                append("=============================\n\n")
-                append("🚀 Plugin Status: Initializing...\n\n")
-                append("📊 System Information:\n")
-                append("  💻 CPU Architecture: $osArch\n")
-                append("  🖥️ Operating System: $osName $osVersion\n")
-                append("  🔧 IDE Version: ${appInfo.fullApplicationName} (build ${appInfo.build})\n")
-                append("  📦 Plugin Version: $pluginVersion\n")
-                append("  🌐 JCEF Support: ${if (jcefSupported) "✓ Yes" else "✗ No"}\n\n")
+                append("Roo Code System Information\n")
+                append("===========================\n\n")
+                append("Status: Initializing...\n\n")
+                append("System Details:\n")
+                append("  OS: $osName $osVersion ($osArch)\n")
+                append("  IDE: ${appInfo.fullApplicationName} (build ${appInfo.build})\n")
+                append("  Plugin: v$pluginVersion\n")
+                append("  Java: $javaVersion\n")
+                append("  JCEF Support: ${if (jcefSupported) "Yes" else "No"}\n")
 
                 // Add warning messages
                 if (isLinuxArm) {
-                    append("⚠️ Warning: System Not Supported\n")
-                    append("   Linux ARM systems are currently not supported by this plugin.\n\n")
+                    append("\nWarning: Linux ARM systems are currently not supported.\n")
                 }
 
                 if (!jcefSupported) {
-                    append("❌ Warning: JCEF Not Supported\n")
-                    append("   Your IDE runtime does not support JCEF. Please use a runtime that supports JCEF.\n")
-                    append("   Please refer to the known issues documentation for more information.\n\n")
+                    append("\nError: Your IDE runtime does not support JCEF. Please use a runtime with JCEF support.\n")
                 }
-
-                append("💡 Tip: If this interface continues to display for a long time, you can refer to the known issues documentation to check if there are any known problems.\n")
             }
         }
 
@@ -600,31 +517,31 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
         }
 
         // Known Issues button
-        private val knownIssuesButton = JButton("📚 Known Issues").apply {
-            preferredSize = Dimension(160, 36)
-            font = font.deriveFont(14f)
+        private val knownIssuesButton = JButton("Known Issues").apply {
+            preferredSize = Dimension(120, 30)
+            font = font.deriveFont(12f)
             isOpaque = false
             isFocusPainted = false
-            border = javax.swing.BorderFactory.createEmptyBorder(8, 16, 8, 16)
+            border = javax.swing.BorderFactory.createEmptyBorder(6, 12, 6, 12)
             addActionListener {
-                BrowserUtil.browse("https://github.com/wecode-ai/RunVSAgent/blob/main/docs/KNOWN_ISSUES.md")
+                BrowserUtil.browse("https://github.com/RooVetGit/Roo-Code/blob/main/docs/KNOWN_ISSUES.md")
             }
         }
 
         // Copy button
-        private val copyButton = JButton("📋 Copy System Info").apply {
-            preferredSize = Dimension(160, 36)
-            font = font.deriveFont(14f)
+        private val copyButton = JButton("Copy Info").apply {
+            preferredSize = Dimension(120, 30)
+            font = font.deriveFont(12f)
             isOpaque = false
             isFocusPainted = false
-            border = javax.swing.BorderFactory.createEmptyBorder(8, 16, 8, 16)
+            border = javax.swing.BorderFactory.createEmptyBorder(6, 12, 6, 12)
             addActionListener { copySystemInfo() }
         }
 
         // Button panel to hold both buttons side by side with modern spacing
         private val buttonPanel = JPanel().apply {
             layout = BorderLayout()
-            border = javax.swing.BorderFactory.createEmptyBorder(20, 0, 0, 0)
+            border = javax.swing.BorderFactory.createEmptyBorder(10, 0, 0, 0)
             add(knownIssuesButton, BorderLayout.WEST)
             add(copyButton, BorderLayout.EAST)
         }
@@ -651,9 +568,13 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
         }
 
         init {
-            // Initialize UI content based on current configuration status
-            updateUIContent()
-
+            // Always show system info panel (no plugin selection needed)
+            contentPanel.add(placeholderLabel, BorderLayout.CENTER)
+            contentPanel.add(buttonPanel, BorderLayout.SOUTH)
+            
+            // Don't auto-start here - WecoderPlugin will handle startup
+            // The plugin will start automatically if configuration is valid
+            
             // Start configuration monitoring
             startConfigurationMonitoring()
 
@@ -1327,21 +1248,15 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             
             contentPanel.removeAll()
             
-            if (configManager.isConfigurationLoaded() && configManager.isConfigurationValid()) {
-                // Configuration is valid, show system info
-                contentPanel.add(placeholderLabel, BorderLayout.CENTER)
-                contentPanel.add(buttonPanel, BorderLayout.SOUTH)
-                logger.info("Showing system info panel - configuration is valid")
-            } else {
-                // Configuration is invalid, show plugin selection
-                contentPanel.add(pluginSelectionPanel, BorderLayout.CENTER)
-                contentPanel.add(configStatusPanel, BorderLayout.SOUTH)
-                logger.info("Showing plugin selection panel - configuration is invalid")
-            }
+            // Always show system info panel (Roo Code is always configured)
+            contentPanel.add(placeholderLabel, BorderLayout.CENTER)
+            contentPanel.add(buttonPanel, BorderLayout.SOUTH)
+            logger.info("Showing system info panel - Roo Code auto-configured")
             
             contentPanel.revalidate()
             contentPanel.repaint()
         }
+        
         
         /**
          * Show manual configuration instructions
@@ -1377,8 +1292,8 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
          */
         private fun showDebugInfo() {
             val debugText = """
-                RunVSAgent Debug Information
-                ============================
+                Roo Code Debug Information
+                ==========================
                 
                 🚀 Plugin Status: ${if (configManager.isConfigurationLoaded() && configManager.isConfigurationValid()) "Loaded and Valid" else "Not Loaded or Invalid"}
                 

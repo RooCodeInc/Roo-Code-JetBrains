@@ -72,7 +72,7 @@ class MainThreadMessageService : MainThreadMessageServiceShape {
             val selectedIdx = Messages.showDialog(
                 project,
                 dialogMessage,
-                options["source"]?.let { (it as? Map<*, *>)?.get("label")?.toString() } ?: "RunVSAgent",
+                options["source"]?.let { (it as? Map<*, *>)?.get("label")?.toString() } ?: "Roo Code",
                 buttonTitles.toTypedArray(),
                 if (cancelIdxFinal >= 0) cancelIdxFinal else 0,
                 // Choose different icons based on severity

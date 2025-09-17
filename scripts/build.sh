@@ -1,7 +1,8 @@
+
 #!/bin/bash
 
-# Build script for RunVSAgent project
-# This script builds VSCode extension and IDEA plugin
+# Build script with pre-packaged Roo Code extension
+# This script downloads, integrates, and builds the project with Roo Code pre-installed
 
 set -euo pipefail
 
@@ -12,82 +13,75 @@ source "$SCRIPT_DIR/lib/build.sh"
 # Script configuration
 readonly SCRIPT_NAME="build.sh"
 readonly SCRIPT_VERSION="1.0.0"
-
-# Build targets
-readonly TARGET_ALL="all"
-readonly TARGET_VSCODE="vscode"
-readonly TARGET_BASE="base"
-readonly TARGET_IDEA="idea"
+readonly ROO_EXTENSION_PUBLISHER="RooVeterinaryInc"
+readonly ROO_EXTENSION_NAME="roo-cline"
+# Will be set dynamically to latest version
+ROO_EXTENSION_VERSION=""
+ROO_EXTENSION_URL=""
 
 # Build configuration
-BUILD_TARGET="$TARGET_ALL"
-CLEAN_BEFORE_BUILD=false
-SKIP_TESTS=false
-OUTPUT_DIR=""
+BUILD_MODE="${BUILD_MODE:-release}"
+DOWNLOAD_DIR=""
+EXTENSION_OUTPUT_DIR=""
+SKIP_DOWNLOAD=false
+SKIP_VSCODE_BUILD=false
+SKIP_EXTENSION_HOST_BUILD=false
+SKIP_IDEA_BUILD=false
+CLEAN_BUILD=false
 
 # Show help for this script
 show_help() {
     cat << EOF
-$SCRIPT_NAME - Build RunVSAgent project components
+$SCRIPT_NAME - Build RunVSAgent with pre-packaged Roo Code extension
 
 USAGE:
-    $SCRIPT_NAME [OPTIONS] [TARGET]
+    $SCRIPT_NAME [OPTIONS]
 
 DESCRIPTION:
-    This script builds the RunVSAgent project components:
-    - VSCode extension (from submodule)
-    - Base extension runtime
-    - IDEA plugin
-
-TARGETS:
-    all         Build all components (default)
-    vscode      Build only VSCode extension
-    base        Build only base extension
-    idea        Build only IDEA plugin
+    This script automates the entire build process with Roo Code extension
+    pre-packaged and ready to use. It:
+    - Downloads the Roo Code extension from VSCode marketplace
+    - Extracts and integrates it into the project
+    - Builds all components (VSCode, Extension Host, IDEA plugin)
+    - Outputs a complete package with Roo Code pre-installed
 
 OPTIONS:
-    -m, --mode MODE       Build mode: release (default) or debug
-    -c, --clean           Clean before building
-    -o, --output DIR      Output directory for build artifacts
-    -t, --skip-tests      Skip running tests
-    --vsix FILE           Use existing VSIX file (skip VSCode build)
-    --skip-vscode         Skip VSCode extension build
-    --skip-base           Skip base extension build
-    --skip-idea           Skip IDEA plugin build
-    -v, --verbose         Enable verbose output
-    -n, --dry-run         Show what would be done without executing
-    -h, --help            Show this help message
-
-BUILD MODES:
-    release     Production build with optimizations (default)
-    debug       Development build with debug symbols and resources
+    -m, --mode MODE         Build mode: release (default) or debug
+    -o, --output DIR        Output directory for final build
+    -c, --clean             Clean build (remove all artifacts before building)
+    --skip-download         Skip downloading Roo Code (use existing)
+    --skip-vscode           Skip VSCode extension build
+    --skip-host             Skip Extension Host build
+    --skip-idea             Skip IDEA plugin build
+    -v, --verbose           Enable verbose output
+    -n, --dry-run           Show what would be done without executing
+    -h, --help              Show this help message
 
 EXAMPLES:
-    $SCRIPT_NAME                           # Build all components
-    $SCRIPT_NAME --mode debug              # Debug build
-    $SCRIPT_NAME --clean vscode            # Clean build VSCode only
-    $SCRIPT_NAME --vsix path/to/file.vsix  # Use existing VSIX
-    $SCRIPT_NAME --output ./dist           # Custom output directory
+    $SCRIPT_NAME                        # Full build with Roo Code
+    $SCRIPT_NAME --mode debug           # Debug build
+    $SCRIPT_NAME --output ./dist        # Custom output directory
+    $SCRIPT_NAME --clean                # Clean build from scratch
 
-ENVIRONMENT:
-    BUILD_MODE          Override build mode (release/debug)
-    VSIX_FILE           Path to existing VSIX file
-    SKIP_VSCODE_BUILD   Skip VSCode build if set to 'true'
-    SKIP_BASE_BUILD     Skip base build if set to 'true'
-    SKIP_IDEA_BUILD     Skip IDEA build if set to 'true'
+OUTPUT:
+    The script creates a complete build in the output directory with:
+    - IDEA plugin (.zip) with Roo Code pre-integrated
+    - Extension Host runtime
+    - Debug resources (if debug mode)
+    - Ready-to-use configuration
 
-EXIT CODES:
-    0    Success
-    1    General error
-    2    Build failed
-    3    Invalid arguments
-    4    Missing dependencies
+REQUIREMENTS:
+    - Node.js 16+ and npm
+    - JDK 17+ (for IDEA plugin)
+    - Git with submodules initialized
+    - Internet connection (for downloading Roo Code)
+    - curl or wget for downloading
 
 EOF
 }
 
 # Parse command line arguments
-parse_build_args() {
+parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             -m|--mode)
@@ -98,37 +92,28 @@ parse_build_args() {
                 BUILD_MODE="$2"
                 shift 2
                 ;;
-            -c|--clean)
-                CLEAN_BEFORE_BUILD=true
-                shift
-                ;;
             -o|--output)
                 if [[ -z "${2:-}" ]]; then
                     log_error "Output directory requires a value"
                     exit 3
                 fi
-                OUTPUT_DIR="$2"
+                EXTENSION_OUTPUT_DIR="$2"
                 shift 2
                 ;;
-            -t|--skip-tests)
-                SKIP_TESTS=true
+            -c|--clean)
+                CLEAN_BUILD=true
                 shift
                 ;;
-            --vsix)
-                if [[ -z "${2:-}" ]]; then
-                    log_error "VSIX file path requires a value"
-                    exit 3
-                fi
-                VSIX_FILE="$2"
-                SKIP_VSCODE_BUILD=true
-                shift 2
+            --skip-download)
+                SKIP_DOWNLOAD=true
+                shift
                 ;;
             --skip-vscode)
                 SKIP_VSCODE_BUILD=true
                 shift
                 ;;
-            --skip-base)
-                SKIP_BASE_BUILD=true
+            --skip-host)
+                SKIP_EXTENSION_HOST_BUILD=true
                 shift
                 ;;
             --skip-idea)
@@ -153,366 +138,622 @@ parse_build_args() {
                 exit 3
                 ;;
             *)
-                # Positional argument (target)
-                BUILD_TARGET="$1"
-                shift
+                log_error "Unexpected argument: $1"
+                log_info "Use --help for usage information"
+                exit 3
                 ;;
         esac
     done
     
     # Validate build mode
-    if [[ "$BUILD_MODE" != "$BUILD_MODE_RELEASE" && "$BUILD_MODE" != "$BUILD_MODE_DEBUG" ]]; then
+    if [[ "$BUILD_MODE" != "release" && "$BUILD_MODE" != "debug" ]]; then
         log_error "Invalid build mode: $BUILD_MODE"
-        log_info "Valid modes: $BUILD_MODE_RELEASE, $BUILD_MODE_DEBUG"
+        log_info "Valid modes: release, debug"
         exit 3
     fi
-    
-    # Validate build target
-    case "$BUILD_TARGET" in
-        "$TARGET_ALL"|"$TARGET_VSCODE"|"$TARGET_BASE"|"$TARGET_IDEA")
-            ;;
-        *)
-            log_error "Invalid build target: $BUILD_TARGET"
-            log_info "Valid targets: $TARGET_ALL, $TARGET_VSCODE, $TARGET_BASE, $TARGET_IDEA"
-            exit 3
-            ;;
-    esac
-    
-    # Set skip flags based on target
-    case "$BUILD_TARGET" in
-        "$TARGET_VSCODE")
-            SKIP_BASE_BUILD=true
-            SKIP_IDEA_BUILD=true
-            ;;
-        "$TARGET_BASE")
-            SKIP_VSCODE_BUILD=true
-            SKIP_IDEA_BUILD=true
-            ;;
-        "$TARGET_IDEA")
-            SKIP_VSCODE_BUILD=true
-            SKIP_BASE_BUILD=true
-            ;;
-    esac
-    
-    # Override with environment variables
-    [[ "${SKIP_VSCODE_BUILD:-false}" == "true" ]] && SKIP_VSCODE_BUILD=true
-    [[ "${SKIP_BASE_BUILD:-false}" == "true" ]] && SKIP_BASE_BUILD=true
-    [[ "${SKIP_IDEA_BUILD:-false}" == "true" ]] && SKIP_IDEA_BUILD=true
-    [[ -n "${VSIX_FILE:-}" ]] && VSIX_FILE="$VSIX_FILE"
-    
-    # Ensure the function returns 0 on success, preventing `set -e` from exiting the script.
-    true
 }
 
-# Check JDK version
-check_jdk_version() {
-    log_step "Checking JDK version..."
+# Initialize build environment
+init_roo_build_env() {
+    log_step "Initializing Roo Code build environment..."
     
-    # Check if java command exists
-    if ! command_exists "java"; then
-        log_error "Java not found. Please install JDK 17 or higher."
-        exit 4
+    # Set up directories
+    DOWNLOAD_DIR="$PROJECT_ROOT/.roo-build"
+    if [[ -z "$EXTENSION_OUTPUT_DIR" ]]; then
+        EXTENSION_OUTPUT_DIR="$PROJECT_ROOT/dist"
     fi
     
-    # Get Java version
-    local java_version_output
-    java_version_output=$(java -version 2>&1 | head -n 1)
+    # Make output directory absolute
+    EXTENSION_OUTPUT_DIR="$(cd "$PROJECT_ROOT" && mkdir -p "$EXTENSION_OUTPUT_DIR" && cd "$EXTENSION_OUTPUT_DIR" && pwd)"
     
-    # Extract version number from output
-    local java_version
-    if [[ "$java_version_output" =~ \"([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
-        # Java 8 and earlier format: "1.8.0_xxx"
-        if [[ "${BASH_REMATCH[1]}" == "1" ]]; then
-            java_version="${BASH_REMATCH[2]}"
-        else
-            java_version="${BASH_REMATCH[1]}"
-        fi
-    elif [[ "$java_version_output" =~ \"([0-9]+) ]]; then
-        # Java 9+ format: "17.0.1" or just "17"
-        java_version="${BASH_REMATCH[1]}"
+    # Ensure directories exist
+    ensure_dir "$DOWNLOAD_DIR"
+    ensure_dir "$EXTENSION_OUTPUT_DIR"
+    
+    # Initialize base build environment
+    init_build_env
+    
+    log_success "Build environment initialized"
+    log_info "Download directory: $DOWNLOAD_DIR"
+    log_info "Output directory: $EXTENSION_OUTPUT_DIR"
+}
+
+# Get latest Roo Code extension version
+get_latest_roo_version() {
+    log_step "Fetching latest Roo Code extension version..."
+    
+    local api_url="https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery"
+    local query_json='{
+        "filters": [{
+            "criteria": [
+                {"filterType": 7, "value": "RooVeterinaryInc.roo-cline"},
+                {"filterType": 12, "value": "4096"}
+            ]
+        }],
+        "flags": 914
+    }'
+    
+    # Fetch extension data from marketplace
+    local response=""
+    if command_exists "curl"; then
+        response=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json;api-version=7.1-preview.1" \
+            -d "$query_json" \
+            "$api_url" 2>/dev/null) || {
+            log_error "Failed to fetch extension information from marketplace"
+            exit 2
+        }
+    elif command_exists "wget"; then
+        response=$(wget -q -O - \
+            --header="Content-Type: application/json" \
+            --header="Accept: application/json;api-version=7.1-preview.1" \
+            --post-data="$query_json" \
+            "$api_url" 2>/dev/null) || {
+            log_error "Failed to fetch extension information from marketplace"
+            exit 2
+        }
     else
-        log_error "Unable to parse Java version from: $java_version_output"
+        log_error "No download tool available (curl or wget)"
         exit 4
     fi
     
-    log_debug "Detected Java version: $java_version"
+    # Parse the version from response using grep and sed
+    ROO_EXTENSION_VERSION=$(echo "$response" | grep -o '"version":"[^"]*"' | head -1 | sed 's/"version":"\([^"]*\)"/\1/')
     
-    # Check if version is >= 17
-    if [[ "$java_version" -lt 17 ]]; then
-        log_error "JDK version $java_version is too old. Required: JDK 17 or higher."
-        log_info "Current Java version output: $java_version_output"
-        exit 4
+    if [[ -z "$ROO_EXTENSION_VERSION" ]]; then
+        # Fallback to a known working version
+        log_warn "Could not fetch latest version, using fallback version 3.26.0"
+        ROO_EXTENSION_VERSION="3.26.0"
     fi
     
-    log_success "JDK version check passed (version: $java_version)"
+    # Set the download URL with the version
+    ROO_EXTENSION_URL="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${ROO_EXTENSION_PUBLISHER}/vsextensions/${ROO_EXTENSION_NAME}/${ROO_EXTENSION_VERSION}/vspackage"
+    
+    log_success "Found Roo Code extension version: $ROO_EXTENSION_VERSION"
 }
 
-# Validate build environment
-validate_build_environment() {
-    log_step "Validating build environment..."
+# Check required tools
+check_requirements() {
+    log_step "Checking requirements..."
     
-    # Check JDK version
-    check_jdk_version
+    # Check Node.js
+    if ! command_exists "node"; then
+        log_error "Node.js is required but not installed"
+        exit 4
+    fi
     
-    # Check if setup has been run
-    local vscode_dir="$PROJECT_ROOT/$VSCODE_SUBMODULE_PATH"
-    if [[ ! -d "$vscode_dir" ]] || [[ ! "$(ls -A "$vscode_dir" 2>/dev/null)" ]]; then
+    # Check npm
+    if ! command_exists "npm"; then
+        log_error "npm is required but not installed"
+        exit 4
+    fi
+    
+    # Check JDK for IDEA plugin
+    if [[ "$SKIP_IDEA_BUILD" != "true" ]]; then
+        if ! command_exists "java"; then
+            log_error "Java is required for IDEA plugin build but not installed"
+            exit 4
+        fi
+    fi
+    
+    # Check download tool
+    if ! command_exists "curl" && ! command_exists "wget"; then
+        log_error "Either curl or wget is required for downloading"
+        exit 4
+    fi
+    
+    # Check unzip
+    if ! command_exists "unzip"; then
+        log_error "unzip is required but not installed"
+        exit 4
+    fi
+    
+    # Check git submodules
+    if [[ ! -d "$PROJECT_ROOT/deps/vscode" ]] || [[ ! "$(ls -A "$PROJECT_ROOT/deps/vscode" 2>/dev/null)" ]]; then
         log_error "VSCode submodule not initialized. Run './scripts/setup.sh' first."
         exit 4
     fi
     
-    # Check for required build files
-    if [[ "$SKIP_BASE_BUILD" != "true" ]]; then
-        if [[ ! -f "$PROJECT_ROOT/$EXTENSION_HOST_DIR/package.json" ]]; then
-            log_error "Base package.json not found. Run './scripts/setup.sh' first."
-            exit 4
-        fi
+    if [[ ! -d "$PROJECT_ROOT/deps/roo-code" ]] || [[ ! "$(ls -A "$PROJECT_ROOT/deps/roo-code" 2>/dev/null)" ]]; then
+        log_warn "Roo-Code submodule not initialized. Will use marketplace version."
     fi
     
-    if [[ "$SKIP_IDEA_BUILD" != "true" ]]; then
-        if [[ ! -f "$PROJECT_ROOT/$IDEA_DIR/build.gradle" && ! -f "$PROJECT_ROOT/$IDEA_DIR/build.gradle.kts" ]]; then
-            log_error "IDEA Gradle build file not found."
-            exit 4
-        fi
-    fi
-    
-    # Validate VSIX file if provided
-    if [[ -n "$VSIX_FILE" ]]; then
-        if [[ ! -f "$VSIX_FILE" ]]; then
-            log_error "VSIX file not found: $VSIX_FILE"
-            exit 4
-        fi
-        log_info "Using existing VSIX file: $VSIX_FILE"
-    fi
-    
-    log_success "Build environment validated"
-}
-
-# Setup build output directory
-setup_output_directory() {
-    if [[ -n "$OUTPUT_DIR" ]]; then
-        log_step "Setting up output directory..."
-        
-        ensure_dir "$OUTPUT_DIR"
-        
-        # Make output directory absolute
-        OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
-        
-        log_info "Build artifacts will be copied to: $OUTPUT_DIR"
-    fi
+    log_success "All requirements met"
 }
 
 # Clean build artifacts
 clean_build_artifacts() {
-    if [[ "$CLEAN_BEFORE_BUILD" != "true" ]]; then
+    if [[ "$CLEAN_BUILD" != "true" ]]; then
         return 0
     fi
     
     log_step "Cleaning build artifacts..."
+    
+    # Clean download directory
+    if [[ -d "$DOWNLOAD_DIR" ]]; then
+        remove_dir "$DOWNLOAD_DIR"
+        ensure_dir "$DOWNLOAD_DIR"
+    fi
+    
+    # Clean output directory
+    if [[ -d "$EXTENSION_OUTPUT_DIR" ]]; then
+        remove_dir "$EXTENSION_OUTPUT_DIR"
+        ensure_dir "$EXTENSION_OUTPUT_DIR"
+    fi
+    
+    # Clean standard build artifacts
     clean_build
+    
     log_success "Build artifacts cleaned"
 }
 
-# Build VSCode extension
-build_vscode_plugin_component() {
+# Download Roo Code extension
+download_roo_extension() {
+    if [[ "$SKIP_DOWNLOAD" == "true" ]]; then
+        log_info "Skipping Roo Code download"
+        return 0
+    fi
+    
+    log_step "Downloading Roo Code extension..."
+    
+    local vsix_file="$DOWNLOAD_DIR/${ROO_EXTENSION_NAME}-${ROO_EXTENSION_VERSION}.vsix"
+    
+    # Check if already downloaded
+    if [[ -f "$vsix_file" ]]; then
+        log_info "Roo Code extension already downloaded"
+        return 0
+    fi
+    
+    # Download using curl or wget
+    if command_exists "curl"; then
+        log_info "Downloading from: $ROO_EXTENSION_URL"
+        if [[ "$DRY_RUN" == "true" ]]; then
+            log_info "[DRY RUN] Would download Roo Code extension v$ROO_EXTENSION_VERSION"
+        else
+            execute_cmd "curl -L -o '$vsix_file' '$ROO_EXTENSION_URL'" "download Roo Code extension"
+        fi
+    elif command_exists "wget"; then
+        log_info "Downloading from: $ROO_EXTENSION_URL"
+        if [[ "$DRY_RUN" == "true" ]]; then
+            log_info "[DRY RUN] Would download Roo Code extension v$ROO_EXTENSION_VERSION"
+        else
+            execute_cmd "wget -O '$vsix_file' '$ROO_EXTENSION_URL'" "download Roo Code extension"
+        fi
+    else
+        log_error "No download tool available (curl or wget)"
+        exit 4
+    fi
+    
+    # Verify download (skip in dry-run mode)
+    if [[ "$DRY_RUN" != "true" ]]; then
+        if [[ ! -f "$vsix_file" ]]; then
+            log_error "Failed to download Roo Code extension"
+            exit 2
+        fi
+        log_success "Roo Code extension downloaded: $vsix_file"
+    else
+        log_info "[DRY RUN] Would verify download of: $vsix_file"
+    fi
+}
+
+# Extract and prepare Roo Code extension
+prepare_roo_extension() {
+    log_step "Preparing Roo Code extension..."
+    
+    local vsix_file="$DOWNLOAD_DIR/${ROO_EXTENSION_NAME}-${ROO_EXTENSION_VERSION}.vsix"
+    local extract_dir="$DOWNLOAD_DIR/roo-code-extracted"
+    # IMPORTANT: The prepareSandbox task expects files in plugins/roo-code/extension
+    local target_dir="$IDEA_BUILD_DIR/plugins/roo-code/extension"
+    
+    # Clean extraction directory
+    remove_dir "$extract_dir"
+    ensure_dir "$extract_dir"
+    
+    # Check if file is gzipped (marketplace sometimes returns gzipped files)
+    local file_type=$(file -b "$vsix_file")
+    if [[ "$file_type" == *"gzip"* ]]; then
+        log_info "Decompressing gzipped VSIX file..."
+        local uncompressed_file="${vsix_file}.uncompressed"
+        execute_cmd "gunzip -c '$vsix_file' > '$uncompressed_file'" "decompress VSIX"
+        vsix_file="$uncompressed_file"
+    fi
+    
+    # Extract VSIX
+    log_info "Extracting Roo Code extension..."
+    execute_cmd "unzip -q '$vsix_file' -d '$extract_dir'" "extract Roo Code extension"
+    
+    # Prepare target directory (note: we clear the parent, then create extension subdir)
+    remove_dir "$IDEA_BUILD_DIR/plugins/roo-code"
+    ensure_dir "$target_dir"
+    
+    # Copy extension files
+    if [[ -d "$extract_dir/extension" ]]; then
+        log_info "Copying Roo Code extension files..."
+        cp -r "$extract_dir/extension"/* "$target_dir/" 2>/dev/null || {
+            # Fallback if glob fails
+            cp -r "$extract_dir/extension/." "$target_dir/"
+        }
+        log_success "Roo Code extension files copied"
+    else
+        log_error "Extension directory not found in VSIX"
+        exit 2
+    fi
+    
+    # Modify package.json if needed for compatibility
+    local package_json="$target_dir/package.json"
+    if [[ -f "$package_json" ]]; then
+        log_info "Adjusting package.json for compatibility..."
+        if [[ "$DRY_RUN" != "true" ]]; then
+            # Remove type field for CommonJS compatibility if needed
+            node -e "
+                const fs = require('fs');
+                const pkgPath = process.argv[1];
+                const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+                // Ensure compatibility settings
+                if (pkg.type === 'module') {
+                    delete pkg.type;
+                }
+                // Add activation events if missing
+                if (!pkg.activationEvents || pkg.activationEvents.length === 0) {
+                    pkg.activationEvents = ['onStartupFinished'];
+                }
+                fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+                console.log('Adjusted package.json for compatibility');
+            " "$package_json" || log_warn "Failed to adjust package.json"
+        fi
+    fi
+    
+    log_success "Roo Code extension prepared at: $target_dir"
+}
+
+# Build VSCode extension (if using submodule)
+build_vscode_if_needed() {
     if [[ "$SKIP_VSCODE_BUILD" == "true" ]]; then
         log_info "Skipping VSCode extension build"
         return 0
     fi
     
-    log_step "Building VSCode extension..."
-    
-
-    
-    # Build extension
-    build_vscode_extension
-    
-    # Copy extension files
-    copy_vscode_extension
-    
-    # Copy debug resources if in debug mode
-    copy_debug_resources
-      
-    
-    log_success "VSCode extension built"
-}
-
-# Build base extension
-build_vscode_extension_host_component() {
-    if [[ "$SKIP_BASE_BUILD" == "true" ]]; then
-        log_info "Skipping Extension host build"
-        return 0
-    fi
-    
-    log_step "Building Extension host..."
-    
-    build_extension_host
-    copy_base_debug_resources
-    
-    log_success "Extension host built"
-}
-
-# Build IDEA plugin
-build_idea_component() {
-    if [[ "$SKIP_IDEA_BUILD" == "true" ]]; then
-        log_info "Skipping IDEA plugin build"
-        return 0
-    fi
-    
-    log_step "Building IDEA plugin..."
-    
-    build_idea_plugin
-    
-    log_success "IDEA plugin built"
-}
-
-# Run tests
-run_tests() {
-    if [[ "$SKIP_TESTS" == "true" ]]; then
-        log_info "Skipping tests"
-        return 0
-    fi
-    
-    log_step "Running tests..."
-    
-    # Run base tests if available
-    if [[ "$SKIP_BASE_BUILD" != "true" && -f "$PROJECT_ROOT/$EXTENSION_HOST_DIR/package.json" ]]; then
-        cd "$PROJECT_ROOT/$EXTENSION_HOST_DIR"
-        if npm run test --if-present >/dev/null 2>&1; then
-            execute_cmd "npm test" "base extension tests"
-        else
-            log_debug "No tests found for base extension"
-        fi
-    fi
-    
-    # Run VSCode extension tests if available
-    if [[ "$SKIP_VSCODE_BUILD" != "true" && -d "$PROJECT_ROOT/$VSCODE_SUBMODULE_PATH" ]]; then
-        cd "$PROJECT_ROOT/$VSCODE_SUBMODULE_PATH"
+    # Check if we should build from Roo-Code submodule
+    if [[ -d "$PROJECT_ROOT/deps/roo-code" ]] && [[ "$(ls -A "$PROJECT_ROOT/deps/roo-code" 2>/dev/null)" ]]; then
+        log_step "Building Roo Code from submodule..."
+        
+        cd "$PROJECT_ROOT/deps/roo-code"
+        
+        # Install dependencies
         local pkg_manager="npm"
         if command_exists "pnpm" && [[ -f "pnpm-lock.yaml" ]]; then
             pkg_manager="pnpm"
         fi
         
-        if $pkg_manager run test --if-present >/dev/null 2>&1; then
-            execute_cmd "$pkg_manager test" "VSCode extension tests"
+        log_info "Installing dependencies with $pkg_manager..."
+        execute_cmd "$pkg_manager install" "dependency installation"
+        
+        # Build extension
+        if [[ "$BUILD_MODE" == "debug" ]]; then
+            log_info "Building in debug mode..."
+            execute_cmd "$pkg_manager run build:dev" "Roo Code build (debug)" || \
+                execute_cmd "$pkg_manager run build" "Roo Code build (debug)"
         else
-            log_debug "No tests found for VSCode extension"
+            log_info "Building in release mode..."
+            execute_cmd "$pkg_manager run build" "Roo Code build (release)"
         fi
+        
+        # Package as VSIX if vsce is available
+        if command_exists "vsce" || npx vsce --help >/dev/null 2>&1; then
+            log_info "Creating VSIX package..."
+            # Change to src directory where the extension package.json is
+            cd "$PROJECT_ROOT/deps/roo-code/src"
+            # Try to package, but don't fail if it doesn't work
+            if npx vsce package --no-dependencies --out ../bin/roo-code-custom.vsix >/dev/null 2>&1; then
+                log_success "VSIX package created: roo-code-custom.vsix"
+                # Use this custom built VSIX instead of the downloaded one
+                local custom_vsix="$PROJECT_ROOT/deps/roo-code/bin/roo-code-custom.vsix"
+                if [[ -f "$custom_vsix" ]]; then
+                    log_info "Using custom-built VSIX for integration"
+                    # Copy to download directory for consistency
+                    cp "$custom_vsix" "$DOWNLOAD_DIR/roo-code-custom.vsix"
+                fi
+            else
+                log_warn "VSIX packaging failed, continuing with built files from source"
+            fi
+            cd "$PROJECT_ROOT/deps/roo-code"
+        fi
+        
+        log_success "Roo Code built from submodule"
+    else
+        log_info "Using downloaded Roo Code extension"
     fi
-    
-    log_success "Tests completed"
 }
 
-# Copy build artifacts to output directory
-copy_build_artifacts() {
-    if [[ -z "$OUTPUT_DIR" ]]; then
+# Build Extension Host
+build_extension_host_component() {
+    if [[ "$SKIP_EXTENSION_HOST_BUILD" == "true" ]]; then
+        log_info "Skipping Extension Host build"
         return 0
     fi
     
-    log_step "Copying build artifacts to output directory..."
+    log_step "Building Extension Host..."
     
-    # Copy VSIX file
-    if [[ -n "$VSIX_FILE" && -f "$VSIX_FILE" ]]; then
-        copy_files "$VSIX_FILE" "$OUTPUT_DIR/" "VSIX file"
+    cd "$PROJECT_ROOT/extension_host"
+    
+    # Install dependencies
+    log_info "Installing Extension Host dependencies..."
+    execute_cmd "npm install" "Extension Host dependency installation"
+    
+    # Build
+    if [[ "$BUILD_MODE" == "debug" ]]; then
+        execute_cmd "npm run build" "Extension Host build (debug)"
+    else
+        execute_cmd "npm run build:extension" "Extension Host build (release)"
     fi
     
-    # Copy IDEA plugin
-    if [[ -n "${IDEA_PLUGIN_FILE:-}" && -f "$IDEA_PLUGIN_FILE" ]]; then
-        copy_files "$IDEA_PLUGIN_FILE" "$OUTPUT_DIR/" "IDEA plugin"
+    # Generate production dependencies list for IDEA plugin build
+    log_info "Generating production dependencies list..."
+    execute_cmd "npm ls --prod --depth=10 --parseable > '$IDEA_BUILD_DIR/prodDep.txt'" "production dependencies list"
+    
+    # Copy to output
+    local host_output="$EXTENSION_OUTPUT_DIR/extension_host"
+    ensure_dir "$host_output"
+    
+    copy_files "$PROJECT_ROOT/extension_host/dist" "$host_output/" "Extension Host dist"
+    copy_files "$PROJECT_ROOT/extension_host/package.json" "$host_output/" "Extension Host package.json"
+    
+    # Copy node_modules for runtime
+    if [[ -d "$PROJECT_ROOT/extension_host/node_modules" ]]; then
+        log_info "Copying Extension Host dependencies..."
+        copy_files "$PROJECT_ROOT/extension_host/node_modules" "$host_output/" "Extension Host node_modules"
     fi
     
-    # Copy debug resources if in debug mode
-    if [[ "$BUILD_MODE" == "$BUILD_MODE_DEBUG" && -d "$PROJECT_ROOT/debug-resources" ]]; then
-        copy_files "$PROJECT_ROOT/debug-resources" "$OUTPUT_DIR/" "debug resources"
-    fi
-    
-    log_success "Build artifacts copied to output directory"
+    log_success "Extension Host built"
 }
 
-# Show build summary
-show_build_summary() {
-    log_step "Build Summary"
-    
-    echo ""
-    log_info "Build completed successfully!"
-    log_info "Build mode: $BUILD_MODE"
-    log_info "Build target: $BUILD_TARGET"
-    log_info "Platform: $(get_platform)"
-    
-    echo ""
-    log_info "Generated artifacts:"
-    
-    # Show VSIX file
-    if [[ -n "$VSIX_FILE" && -f "$VSIX_FILE" ]]; then
-        log_info "  VSCode Extension: $VSIX_FILE"
+# Build IDEA plugin with Roo Code
+build_idea_with_roo() {
+    if [[ "$SKIP_IDEA_BUILD" == "true" ]]; then
+        log_info "Skipping IDEA plugin build"
+        return 0
     fi
     
-    # Show IDEA plugin
-    if [[ -n "${IDEA_PLUGIN_FILE:-}" && -f "$IDEA_PLUGIN_FILE" ]]; then
-        log_info "  IDEA Plugin: $IDEA_PLUGIN_FILE"
+    log_step "Building IDEA plugin with Roo Code..."
+    
+    cd "$IDEA_BUILD_DIR"
+    
+    # Ensure Roo Code is in place
+    if [[ ! -d "$IDEA_BUILD_DIR/plugins/roo-code/extension" ]]; then
+        log_error "Roo Code extension not found in plugins/roo-code/extension directory"
+        exit 2
     fi
     
-    # Show debug resources
-    if [[ "$BUILD_MODE" == "$BUILD_MODE_DEBUG" && -d "$PROJECT_ROOT/debug-resources" ]]; then
-        log_info "  Debug Resources: $PROJECT_ROOT/debug-resources"
+    # Use gradlew if available
+    local gradle_cmd="gradle"
+    if [[ -f "./gradlew" ]]; then
+        gradle_cmd="./gradlew"
+        chmod +x "./gradlew"
     fi
     
-    # Show output directory
-    if [[ -n "$OUTPUT_DIR" ]]; then
-        log_info "  Output Directory: $OUTPUT_DIR"
+    # Set build mode
+    local debug_mode="release"
+    if [[ "$BUILD_MODE" == "debug" ]]; then
+        debug_mode="idea"
     fi
     
-    echo ""
-    log_info "Next steps:"
-    if [[ "$BUILD_TARGET" == "$TARGET_ALL" || "$BUILD_TARGET" == "$TARGET_IDEA" ]]; then
-        log_info "  1. Install IDEA plugin from: ${IDEA_PLUGIN_FILE:-$IDEA_BUILD_DIR/build/distributions/}"
-        log_info "  2. Configure plugin settings in IDEA"
+    # Build plugin
+    log_info "Building IDEA plugin in $BUILD_MODE mode..."
+    execute_cmd "$gradle_cmd -PdebugMode=$debug_mode -PvscodePlugin=roo-code buildPlugin --info" "IDEA plugin build"
+    
+    # Find generated plugin
+    local plugin_file
+    plugin_file=$(find "$IDEA_BUILD_DIR/build/distributions" \( -name "*.zip" -o -name "*.jar" \) -type f | sort -r | head -n 1)
+    
+    if [[ -z "$plugin_file" ]]; then
+        log_error "IDEA plugin build failed - no output file found"
+        exit 2
     fi
     
-    echo ""
+    # Copy to output directory
+    copy_files "$plugin_file" "$EXTENSION_OUTPUT_DIR/" "IDEA plugin"
+    
+    log_success "IDEA plugin built with Roo Code: $(basename "$plugin_file")"
 }
 
-# Main build function
+# Copy debug resources if needed
+copy_debug_resources_with_roo() {
+    if [[ "$BUILD_MODE" != "debug" ]]; then
+        return 0
+    fi
+    
+    log_step "Copying debug resources..."
+    
+    local debug_dir="$EXTENSION_OUTPUT_DIR/debug-resources"
+    ensure_dir "$debug_dir"
+    
+    # Copy Roo Code debug resources
+    local roo_debug="$debug_dir/roo-code"
+    ensure_dir "$roo_debug"
+    
+    if [[ -d "$IDEA_BUILD_DIR/plugins/roo-code" ]]; then
+        copy_files "$IDEA_BUILD_DIR/plugins/roo-code/*" "$roo_debug/" "Roo Code debug resources"
+    fi
+    
+    # Copy Extension Host debug resources
+    if [[ -d "$PROJECT_ROOT/extension_host/dist" ]]; then
+        local host_debug="$debug_dir/extension_host"
+        ensure_dir "$host_debug"
+        copy_files "$PROJECT_ROOT/extension_host/dist/*" "$host_debug/" "Extension Host debug resources"
+    fi
+    
+    log_success "Debug resources copied"
+}
+
+# Create installation instructions
+create_installation_instructions() {
+    log_step "Creating installation instructions..."
+    
+    local readme_file="$EXTENSION_OUTPUT_DIR/README.md"
+    
+    cat > "$readme_file" << EOF
+# RunVSAgent with Roo Code - Build Output
+
+This directory contains the complete build of RunVSAgent with Roo Code pre-packaged.
+
+## Build Information
+- Build Date: $(date)
+- Build Mode: $BUILD_MODE
+- Roo Code Version: $ROO_EXTENSION_VERSION
+
+## Contents
+
+### IDEA Plugin
+The IDEA plugin file (\`*.zip\` or \`*.jar\`) includes:
+- Complete RunVSAgent integration
+- Pre-packaged Roo Code extension
+- Extension Host runtime
+- All required dependencies
+
+### Extension Host
+The \`extension_host/\` directory contains:
+- Compiled Extension Host runtime
+- Node.js dependencies
+- Configuration files
+
+EOF
+
+    if [[ "$BUILD_MODE" == "debug" ]]; then
+        cat >> "$readme_file" << EOF
+
+### Debug Resources
+The \`debug-resources/\` directory contains:
+- Uncompressed extension files for debugging
+- Source maps
+- Development configurations
+
+EOF
+    fi
+
+    cat >> "$readme_file" << EOF
+
+## Installation Instructions
+
+### Installing the IDEA Plugin
+
+1. Open your JetBrains IDE (IntelliJ IDEA, WebStorm, etc.)
+2. Go to **Settings/Preferences** → **Plugins**
+3. Click the gear icon ⚙️ → **Install Plugin from Disk...**
+4. Select the plugin file from this directory
+5. Restart the IDE when prompted
+
+### Verifying Installation
+
+After installation:
+1. Look for the RunVSAgent toolbar in your IDE
+2. Click on the Roo Code icon to open the assistant
+3. The extension should be ready to use immediately
+
+### Configuration
+
+The Roo Code extension is pre-configured and ready to use. You can customize settings through:
+- IDE Settings → RunVSAgent → Extensions
+- The extension's own settings panel
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. **Extension not loading**: 
+   - Ensure the IDE was restarted after installation
+   - Check the IDE logs for error messages
+
+2. **Missing features**:
+   - Verify that all files were extracted properly
+   - Check that Node.js is installed on your system
+
+3. **Performance issues**:
+   - Try the release build if using debug
+   - Ensure sufficient memory is allocated to the IDE
+
+## Support
+
+For issues or questions:
+- Check the project documentation
+- Report issues on the project repository
+- Contact the development team
+
+EOF
+    
+    log_success "Installation instructions created: $readme_file"
+}
+
+# Main build process
 main() {
-    log_info "Starting RunVSAgent build process..."
-    log_info "Script: $SCRIPT_NAME v$SCRIPT_VERSION"
-    log_info "Platform: $(get_platform)"
-    log_info "Project root: $PROJECT_ROOT"
-    
-    if [[ "$DRY_RUN" == "true" ]]; then
-        log_warn "DRY RUN MODE - No changes will be made"
-    fi
+    log_info "Starting RunVSAgent build with Roo Code extension"
+    log_info "Build mode: $BUILD_MODE"
     
     # Parse arguments
-    parse_build_args "$@"
+    parse_args "$@"
     
-    log_info "Build configuration:"
-    log_info "  Mode: $BUILD_MODE"
-    log_info "  Target: $BUILD_TARGET"
-    log_info "  Clean: $CLEAN_BEFORE_BUILD"
-    log_info "  Skip tests: $SKIP_TESTS"
-    [[ -n "$OUTPUT_DIR" ]] && log_info "  Output: $OUTPUT_DIR"
+    # Initialize environment
+    init_roo_build_env
     
-    # Initialize build environment
-    init_build_env
+    # Check requirements
+    check_requirements
     
-    # Run build steps
-    validate_build_environment
-    setup_output_directory
+    # Get latest Roo Code version
+    get_latest_roo_version
+    
+    log_info "Using Roo Code extension v$ROO_EXTENSION_VERSION"
+    
+    # Clean if requested
     clean_build_artifacts
     
+    # Download and prepare Roo Code
+    download_roo_extension
+    prepare_roo_extension
+    
     # Build components
-    build_vscode_plugin_component
-    build_vscode_extension_host_component
-    build_idea_component
+    build_vscode_if_needed
+    build_extension_host_component
+    build_idea_with_roo
     
-    # Run tests and finalize
-    #run_tests
-    copy_build_artifacts
-    show_build_summary
+    # Copy debug resources
+    copy_debug_resources_with_roo
     
-    log_success "Build process completed successfully!"
+    # Create documentation
+    create_installation_instructions
+    
+    # Final summary
+    log_success "Build completed successfully!"
+    log_info "Output directory: $EXTENSION_OUTPUT_DIR"
+    log_info ""
+    log_info "Build artifacts:"
+    ls -lh "$EXTENSION_OUTPUT_DIR" 2>/dev/null || true
+    log_info ""
+    log_info "To install the plugin, see: $EXTENSION_OUTPUT_DIR/README.md"
+    
+    return 0
 }
 
-# Run main function with all arguments
-main "$@"
+# Run main function if script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

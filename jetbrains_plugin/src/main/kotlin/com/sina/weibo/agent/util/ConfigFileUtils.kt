@@ -15,9 +15,8 @@ import java.io.IOException
 object ConfigFileUtils {
 
     fun getCurrentExtensionId(): String? {
-        val properties = loadMainConfig()
-        val currentExtensionId = properties.getProperty(PluginConstants.ConfigFiles.EXTENSION_TYPE_KEY)
-        return currentExtensionId
+        // Always return roo-code as the current extension
+        return "roo-code"
     }
     
     /**
@@ -158,12 +157,9 @@ object ConfigFileUtils {
     fun createDefaultMainConfig() {
         val properties = Properties()
         properties.setProperty(PluginConstants.ConfigFiles.EXTENSION_TYPE_KEY, "roo-code")
-        properties.setProperty("# Available extension types:", "")
-        properties.setProperty("# - roo-code: Roo Code extension", "")
-        properties.setProperty("# - cline: Cline AI extension", "")
-        properties.setProperty("# - custom: Custom extension", "")
+        properties.setProperty("# Default extension:", "roo-code (auto-configured)")
         
-        saveMainConfig(properties, "RunVSAgent Extension Configuration - Default Template")
+        saveMainConfig(properties, "RunVSAgent Extension Configuration - Roo Code Auto-Configured")
     }
     
     /**

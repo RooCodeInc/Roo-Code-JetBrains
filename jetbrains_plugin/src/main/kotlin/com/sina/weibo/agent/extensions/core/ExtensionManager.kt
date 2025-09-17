@@ -51,25 +51,25 @@ class ExtensionManager(private val project: Project) {
         // Register all available extension providers
         registerExtensionProviders()
         
-        if (configuredExtensionId != null) {
-            // If a specific extension is configured, set it directly
-            val provider = extensionProviders[configuredExtensionId]
-            if (provider != null && provider.isAvailable(project)) {
-                currentProvider = provider
-                LOG.info("Set configured extension provider: $configuredExtensionId")
-            } else {
-                LOG.warn("Configured extension provider not available: $configuredExtensionId")
-                // Don't set default provider, let system remain uninitialized
-                currentProvider = null
-            }
+        // ALWAYS use roo-code as the default extension
+        val rooCodeId = "roo-code"
+        val provider = extensionProviders[rooCodeId]
+        if (provider != null && provider.isAvailable(project)) {
+            currentProvider = provider
+            LOG.info("Auto-selected Roo Code extension provider")
         } else {
-            // Only set default provider when no configuration exists (optional)
-            LOG.info("No extension configured, skipping default provider setup")
-            // Comment out automatic default provider setup logic
-            // setDefaultExtensionProvider()
+            LOG.warn("Roo Code extension provider not available, trying to use configured: $configuredExtensionId")
+            // Fallback to configured extension if roo-code is not available
+            if (configuredExtensionId != null) {
+                val configuredProvider = extensionProviders[configuredExtensionId]
+                if (configuredProvider != null && configuredProvider.isAvailable(project)) {
+                    currentProvider = configuredProvider
+                    LOG.info("Set configured extension provider: $configuredExtensionId")
+                }
+            }
         }
         
-        LOG.info("Extension manager initialized")
+        LOG.info("Extension manager initialized with provider: ${currentProvider?.getExtensionId()}")
     }
     
     /**
