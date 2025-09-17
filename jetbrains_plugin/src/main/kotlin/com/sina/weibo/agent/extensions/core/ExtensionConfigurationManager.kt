@@ -61,7 +61,7 @@ class ExtensionConfigurationManager(private val project: Project) {
             isConfigurationLoaded = true
             configurationLoadTime = System.currentTimeMillis()
             
-            // Save configuration to disk so WecoderPlugin can find it
+            // Save configuration to disk so Roo Code can find it
             try {
                 saveConfiguration()
                 logger.info("Default Roo Code configuration saved")
