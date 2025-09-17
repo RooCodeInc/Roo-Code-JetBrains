@@ -232,7 +232,7 @@ class RooCodeButtonProvider : ExtensionButtonProvider {
         private val commandId: String = "roo-cline.marketplaceButtonClicked"
 
         init {
-            templatePresentation.icon = AllIcons.Nodes.Plugin
+            templatePresentation.icon = AllIcons.Javaee.WebModuleGroup
             templatePresentation.text = "Marketplace"
             templatePresentation.description = "Browse and install MCP servers"
         }
@@ -257,7 +257,7 @@ class RooCodeButtonProvider : ExtensionButtonProvider {
         private val commandId: String = "roo-cline.cloudButtonClicked"
 
         init {
-            templatePresentation.icon = AllIcons.RunConfigurations.Remote
+            templatePresentation.icon = AllIcons.Javaee.WebService
             templatePresentation.text = "Cloud"
             templatePresentation.description = "Cloud services and sync"
         }

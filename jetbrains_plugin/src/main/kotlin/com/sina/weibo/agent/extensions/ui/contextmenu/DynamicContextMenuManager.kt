@@ -8,9 +8,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.sina.weibo.agent.extensions.core.ExtensionManager
-import com.sina.weibo.agent.extensions.plugin.cline.ClineContextMenuProvider
 import com.sina.weibo.agent.extensions.plugin.roo.RooCodeContextMenuProvider
-import com.sina.weibo.agent.extensions.plugin.kilo.KiloCodeContextMenuProvider
 
 /**
  * Dynamic context menu manager that controls which context menu actions are available
@@ -99,8 +97,6 @@ class DynamicContextMenuManager(private val project: Project) {
         
         return when (extensionId) {
             "roo-code" -> RooCodeContextMenuProvider()
-            "cline" -> ClineContextMenuProvider()
-            "kilo-code" -> KiloCodeContextMenuProvider()
             // TODO: Add other context menu providers as they are implemented
             // "copilot" -> CopilotContextMenuProvider()
             // "claude" -> ClaudeContextMenuProvider()
