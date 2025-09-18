@@ -87,10 +87,10 @@ SPDX-License-Identifier: Apache-2.0
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <projectService serviceImplementation="com.sina.weibo.agent.plugin.WecoderPluginService"/>
-        <postStartupActivity implementation="com.sina.weibo.agent.plugin.WecoderPlugin"/>
-        <editorFactoryListener implementation="com.sina.weibo.agent.editor.EditorListener"/>
-        <toolWindow factoryClass="com.sina.weibo.agent.ui.RunVSAgentToolWindowFactory"
+        <projectService serviceImplementation="com.roocode.jetbrains.plugin.WecoderPluginService"/>
+        <postStartupActivity implementation="com.roocode.jetbrains.plugin.WecoderPlugin"/>
+        <editorFactoryListener implementation="com.roocode.jetbrains.editor.EditorListener"/>
+        <toolWindow factoryClass="com.roocode.jetbrains.ui.RunVSAgentToolWindowFactory"
                     id="RunVSAgent"
                     secondary="true"
                     icon="/icons/roo-logo.svg"
@@ -100,25 +100,25 @@ SPDX-License-Identifier: Apache-2.0
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.terminal">
-        <localTerminalCustomizer implementation="com.sina.weibo.agent.terminal.WeCoderTerminalCustomizer"/>
+        <localTerminalCustomizer implementation="com.roocode.jetbrains.terminal.WeCoderTerminalCustomizer"/>
     </extensions>
 
     <actions>
         <!-- Dynamic toolbar group - buttons will be populated based on current extension -->
         <group id="WecoderToolbarGroup">
             <group id="RunVSAgent.DynamicExtensionActions"
-                   class="com.sina.weibo.agent.extensions.ui.actions.DynamicExtensionActionsGroup"
+                   class="com.roocode.jetbrains.extensions.ui.actions.DynamicExtensionActionsGroup"
                    text="Extension Actions"
                    description="Dynamic extension-specific actions" />
             <action id="RunVSAgent.extensionStatusChecker"
                     icon="AllIcons.General.InspectionsOK"
-                    class="com.sina.weibo.agent.extensions.ui.actions.ExtensionStatusChecker"
+                    class="com.roocode.jetbrains.extensions.ui.actions.ExtensionStatusChecker"
                     text="Check Extension Status"
                     description="Check extension status and diagnose issues" />
         </group>
 
         <group id="RunVSAgent.RightClickMenu" text="Roo Code" description="Roo Code AI Assistant"  icon="/icons/roo-logo.svg" popup="true">
-            <group id="RunVSAgent.RightClick.Chat" class="com.sina.weibo.agent.extensions.ui.contextmenu.DynamicExtensionContextMenuGroup"
+            <group id="RunVSAgent.RightClick.Chat" class="com.roocode.jetbrains.extensions.ui.contextmenu.DynamicExtensionContextMenuGroup"
                    text="Extension Actions" description="Dynamic extension-specific context menu actions"/>
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </group>
@@ -127,7 +127,7 @@ SPDX-License-Identifier: Apache-2.0
         <!-- Right-click menu for extension-specific actions -->
         <group id="RunVSAgent.RightClick.ExtensionActions" text="Extension Actions" description="Extension-specific actions">
             <group id="RunVSAgent.RightClick.DynamicExtensionActions"
-                   class="com.sina.weibo.agent.extensions.ui.actions.DynamicExtensionActionsGroup"
+                   class="com.roocode.jetbrains.extensions.ui.actions.DynamicExtensionActionsGroup"
                    text="Extension Actions"
                    description="Dynamic extension-specific actions" />
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
@@ -137,7 +137,7 @@ SPDX-License-Identifier: Apache-2.0
         <group id="RunVSAgent.MainMenu" text="Roo Code" description="Roo Code AI Assistant">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <group id="RunVSAgent.MainMenu.DynamicExtensionActions"
-                   class="com.sina.weibo.agent.extensions.ui.actions.DynamicExtensionActionsGroup"
+                   class="com.roocode.jetbrains.extensions.ui.actions.DynamicExtensionActionsGroup"
                    text="Extension Actions"
                    description="Dynamic extension-specific actions" />
         </group>

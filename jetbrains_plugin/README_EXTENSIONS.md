@@ -59,16 +59,16 @@ RunVSAgent now supports a modular extension system that allows you to use differ
 
 1. **Create Extension Package**:
    ```bash
-   mkdir -p src/main/kotlin/com/sina/weibo/agent/extensions/yourextension
+   mkdir -p src/main/kotlin/com/roocode/jetbrains/extensions/yourextension
    ```
 
 2. **Implement ExtensionProvider**:
    ```kotlin
-   // src/main/kotlin/com/sina/weibo/agent/extensions/yourextension/YourExtensionProvider.kt
-   package com.sina.weibo.agent.extensions.yourextension
-   
+   // src/main/kotlin/com/roocode/jetbrains/extensions/yourextension/YourExtensionProvider.kt
+   package com.roocode.jetbrains.extensions.yourextension
+
    import com.intellij.openapi.project.Project
-   import com.sina.weibo.agent.extensions.ExtensionProvider
+   import com.roocode.jetbrains.extensions.ExtensionProvider
    
    class YourExtensionProvider : ExtensionProvider {
        override fun getExtensionId(): String = "your-extension"
@@ -110,7 +110,7 @@ RunVSAgent now supports a modular extension system that allows you to use differ
        // ... existing providers ...
        
        // Register your extension provider
-       val yourProvider = com.sina.weibo.agent.extensions.yourextension.YourExtensionProvider()
+       val yourProvider = com.roocode.jetbrains.extensions.yourextension.YourExtensionProvider()
        registerExtensionProvider(yourProvider)
    }
    ```
@@ -277,7 +277,7 @@ claude.model=claude-3-sonnet-20240229
 Run the extension tests:
 
 ```bash
-./gradlew test --tests "com.sina.weibo.agent.extensions.ExtensionDecouplingTest"
+./gradlew test --tests "com.roocode.jetbrains.extensions.ExtensionDecouplingTest"
 ```
 
 ## Contributing
