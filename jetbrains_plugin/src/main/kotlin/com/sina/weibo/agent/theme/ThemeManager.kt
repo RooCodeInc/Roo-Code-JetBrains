@@ -396,7 +396,7 @@ class ThemeManager : Disposable {
         try {
             // Parse CSS custom properties (--property-name: value;)
             val cssVariablePattern = Regex("""--([a-zA-Z-]+):\s*([^;]+);""")
-            val matches = cssVariablePattern.findAll(cssContent)
+            val matches = cssVariablePattern.findAll(cssContent).toList()
             
             for (match in matches) {
                 val propertyName = match.groupValues[1]
@@ -415,7 +415,7 @@ class ThemeManager : Disposable {
                     "type-ramp-minus1-font-size", "type-ramp-minus1-line-height",
                     "type-ramp-minus2-font-size", "type-ramp-minus2-line-height",
                     "type-ramp-plus1-font-size", "type-ramp-plus1-line-height",
-                    "scrollbarWidth", "scrollbarHeight", "button-icon-corner-radius",
+                    "scrollbar-width", "scrollbar-height", "button-icon-corner-radius",
                     "button-icon-outline-offset", "button-icon-padding", "button-padding-horizontal",
                     "button-padding-vertical", "checkbox-corner-radius", "dropdown-list-max-height",
                     "tag-corner-radius", "text-xs", "text-sm", "text-base", "text-lg",
@@ -446,7 +446,7 @@ class ThemeManager : Disposable {
                 themeColors.addProperty(themePropertyName, resolvedValue)
             }
             
-            logger.info("Parsed ${matches.count()} CSS custom properties into theme colors")
+            logger.info("Parsed ${matches.size} CSS custom properties into theme colors")
         } catch (e: Exception) {
             logger.error("Error parsing CSS variables into theme", e)
         }

@@ -20,8 +20,8 @@
 --radius-lg: 8px;
 --radius-md: 6px;
 --radius-sm: 4px;
---scrollbarHeight: 10px;
---scrollbarWidth: 10px;
+--scrollbar-height: 10px;
+--scrollbar-width: 10px;
 --tag-corner-radius: 2px;
 --text-base: 1rem;
 --text-lg: 1.125rem;
