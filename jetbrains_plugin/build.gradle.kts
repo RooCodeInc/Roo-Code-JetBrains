@@ -236,6 +236,7 @@ dependencies {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
+    pluginName.set("RooCode")
     version.set(properties("platformVersion"))
     type.set(properties("platformType"))
 

@@ -231,6 +231,34 @@ get_latest_roo_version() {
     ROO_EXTENSION_URL="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${ROO_EXTENSION_PUBLISHER}/vsextensions/${ROO_EXTENSION_NAME}/${ROO_EXTENSION_VERSION}/vspackage"
     
     log_success "Found Roo Code extension version: $ROO_EXTENSION_VERSION"
+    
+    # Update gradle.properties with the Roo Code version
+    update_gradle_version
+}
+
+# Update gradle.properties with the Roo Code version
+update_gradle_version() {
+    local gradle_props="$PROJECT_ROOT/jetbrains_plugin/gradle.properties"
+    
+    if [[ -f "$gradle_props" ]]; then
+        log_info "Updating gradle.properties with version $ROO_EXTENSION_VERSION..."
+        
+        # Update the version in gradle.properties
+        if [[ "$DRY_RUN" != "true" ]]; then
+            # Create a backup first
+            cp "$gradle_props" "${gradle_props}.bak"
+            
+            # Update the pluginVersion line
+            sed -i.tmp "s/^pluginVersion=.*/pluginVersion=${ROO_EXTENSION_VERSION}/" "$gradle_props"
+            rm "${gradle_props}.tmp" 2>/dev/null || true
+            
+            log_success "Updated plugin version to $ROO_EXTENSION_VERSION in gradle.properties"
+        else
+            log_info "[DRY RUN] Would update gradle.properties version to $ROO_EXTENSION_VERSION"
+        fi
+    else
+        log_warn "gradle.properties not found at: $gradle_props"
+    fi
 }
 
 # Check required tools
@@ -558,9 +586,13 @@ build_idea_with_roo() {
         debug_mode="idea"
     fi
     
+    # Clean build directory to ensure fresh build with new version
+    log_info "Cleaning build directory for fresh build..."
+    execute_cmd "$gradle_cmd clean" "clean build directory"
+    
     # Build plugin
-    log_info "Building IDEA plugin in $BUILD_MODE mode..."
-    execute_cmd "$gradle_cmd -PdebugMode=$debug_mode -PvscodePlugin=roo-code buildPlugin --info" "IDEA plugin build"
+    log_info "Building IDEA plugin in $BUILD_MODE mode with version $ROO_EXTENSION_VERSION..."
+    execute_cmd "$gradle_cmd -PdebugMode=$debug_mode -PvscodePlugin=roo-code -PpluginVersion=$ROO_EXTENSION_VERSION buildPlugin --info" "IDEA plugin build"
     
     # Find generated plugin
     local plugin_file
@@ -575,6 +607,26 @@ build_idea_with_roo() {
     copy_files "$plugin_file" "$EXTENSION_OUTPUT_DIR/" "IDEA plugin"
     
     log_success "IDEA plugin built with Roo Code: $(basename "$plugin_file")"
+    
+    # Rename the plugin file to use RooCode name with correct version
+    local old_name=$(basename "$plugin_file")
+    local new_plugin_name="RooCode-${ROO_EXTENSION_VERSION}.zip"
+    local new_plugin_path="$EXTENSION_OUTPUT_DIR/$new_plugin_name"
+    
+    # Remove any existing file with the new name
+    if [[ -f "$new_plugin_path" ]]; then
+        log_info "Removing existing $new_plugin_name"
+        rm -f "$new_plugin_path"
+    fi
+    
+    # Copy (not move) to preserve original for debugging if needed
+    log_info "Creating $new_plugin_name from $old_name"
+    cp "$plugin_file" "$new_plugin_path"
+    
+    # Remove the original file with old naming
+    rm -f "$plugin_file"
+    
+    log_success "Plugin renamed to: $new_plugin_name"
 }
 
 # Copy debug resources if needed
