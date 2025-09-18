@@ -95,8 +95,12 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
         // Content panel
         private val contentPanel = JPanel(BorderLayout())
 
-        // Placeholder label
-        private val placeholderLabel = JLabel(createSystemInfoText())
+        // Placeholder label with proper padding and centering
+        private val placeholderLabel = JLabel(createSystemInfoText()).apply {
+            horizontalAlignment = JLabel.CENTER
+            verticalAlignment = JLabel.CENTER
+            border = BorderFactory.createEmptyBorder(40, 40, 40, 40)
+        }
 
         // System info text for copying
         private val systemInfoText = createSystemInfoPlainText()
@@ -143,61 +147,39 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             // Check for Linux ARM system
             val isLinuxArm = osName.lowercase().contains("linux") && (osArch.lowercase().contains("aarch64") || osArch.lowercase().contains("arm"))
 
-            // Detect current IDEA theme
-            val isDarkTheme = detectCurrentTheme()
-            
-            // Generate theme-adaptive CSS styles
-            val themeStyles = generateThemeStyles(isDarkTheme)
-
+            // Use simple HTML with proper structure for better centering
             return buildString {
-                append("<html><head><style>$themeStyles</style></head>")
-                append("<body class='${if (isDarkTheme) "dark-theme" else "light-theme"}'>")
-
-                // Header section
-                append("<div class='header'>")
-                append("<div class='title'>Roo Code is initializing...</div>")
+                append("<html><body style='text-align: center; padding: 20px;'>")
+                append("<div style='margin: 0 auto; max-width: 600px;'>")
+                append("<h2 style='margin-bottom: 20px;'>Roo Code is initializing...</h2>")
+                append("<div style='text-align: left; display: inline-block;'>")
+                append("<h3 style='margin-top: 30px;'>System Information</h3>")
+                append("<ul style='padding-left: 20px;'>")
+                append("<li>OS: $osName $osVersion</li>")
+                append("<li>Architecture: $osArch</li>")
+                append("<li>IDE: ${appInfo.fullApplicationName}</li>")
+                append("<li>Plugin: v$pluginVersion</li>")
+                append("<li>Java: $javaVersion</li>")
+                append("<li>JCEF: ${if (jcefSupported) "Supported" else "Not Supported"}</li>")
+                append("</ul>")
                 append("</div>")
 
-                // System info card - minimal essential info
-                append("<div class='info-card'>")
-                append("<div class='info-grid'>")
-
-                append("<div class='info-row'>")
-                append("<span class='info-label'>OS</span>")
-                append("<span class='info-value'>$osName $osVersion ($osArch)</span>")
-                append("</div>")
-
-                append("<div class='info-row'>")
-                append("<span class='info-label'>IDE</span>")
-                append("<span class='info-value version-text'>${appInfo.fullApplicationName}</span>")
-                append("</div>")
-
-                append("<div class='info-row'>")
-                append("<span class='info-label'>Plugin</span>")
-                append("<span class='info-value'>v$pluginVersion</span>")
-                append("</div>")
-
-                append("<div class='info-row'>")
-                append("<span class='info-label'>Java</span>")
-                append("<span class='info-value'>$javaVersion</span>")
-                append("</div>")
-
-                append("</div>")
-                append("</div>")
-
-                // Warning messages - only show critical issues
+                // Add warning messages if needed
                 if (isLinuxArm) {
-                    append("<div class='warning-card warning'>")
-                    append("<div class='warning-text'>Warning: Linux ARM systems are currently not supported.</div>")
+                    append("<div style='margin-top: 20px;'>")
+                    append("<p>⚠️ System Not Supported</p>")
+                    append("<p>Linux ARM systems are not currently supported.</p>")
                     append("</div>")
                 }
 
                 if (!jcefSupported) {
-                    append("<div class='warning-card error'>")
-                    append("<div class='warning-text'>Error: Your IDE runtime does not support JCEF. Please use a runtime with JCEF support.</div>")
+                    append("<div style='margin-top: 20px;'>")
+                    append("<p>⚠️ JCEF Not Supported</p>")
+                    append("<p>Please use a JCEF-enabled runtime.</p>")
                     append("</div>")
                 }
 
+                append("</div>")
                 append("</body></html>")
             }
         }
@@ -218,254 +200,6 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             } catch (e: Exception) {
                 // Default to dark theme on error
                 true
-            }
-        }
-
-        /**
-         * Generate theme-adaptive CSS styles
-         */
-        private fun generateThemeStyles(isDarkTheme: Boolean): String {
-            return if (isDarkTheme) {
-                """
-                body.dark-theme {
-                    width: 400px;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                    margin: 0;
-                    padding: 20px;
-                    background: #1e1e1e;
-                    color: #e2e8f0;
-                    border-radius: 8px;
-                }
-                
-                .header {
-                    text-align: center;
-                    margin-bottom: 15px;
-                    padding: 5px;
-                }
-                
-                .title {
-                    font-size: 14px;
-                    font-weight: normal;
-                    color: #f8fafc;
-                }
-                
-                .info-card {
-                    background: rgba(30, 30, 30, 0.3);
-                    backdrop-filter: none;
-                    border-radius: 4px;
-                    padding: 12px;
-                    margin-bottom: 12px;
-                    border: 1px solid rgba(148, 163, 184, 0.1);
-                }
-                
-                .info-grid {
-                    display: grid;
-                    gap: 8px;
-                }
-                
-                .info-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 6px 0;
-                    border-bottom: 1px solid rgba(148, 163, 184, 0.05);
-                }
-                
-                .info-row:last-child {
-                    border-bottom: none;
-                }
-                
-                .info-label {
-                    font-weight: normal;
-                    opacity: 0.7;
-                    color: #9ca3af;
-                    font-size: 12px;
-                }
-                
-                .info-value {
-                    font-weight: normal;
-                    color: #e5e7eb;
-                    font-size: 12px;
-                }
-                
-                .version-text {
-                    font-size: 12px;
-                }
-                
-                .success {
-                    color: #10b981;
-                }
-                
-                .error {
-                    color: #ef4444;
-                }
-                
-                .warning-card {
-                    border-radius: 4px;
-                    padding: 8px;
-                    margin-bottom: 8px;
-                    backdrop-filter: none;
-                }
-                
-                .warning-card.warning {
-                    background: rgba(245, 158, 11, 0.2);
-                    border: 1px solid rgba(245, 158, 11, 0.4);
-                }
-                
-                .warning-card.error {
-                    background: rgba(239, 68, 68, 0.2);
-                    border: 1px solid rgba(239, 68, 68, 0.4);
-                }
-                
-                .warning-header {
-                    display: flex;
-                    align-items: center;
-                    margin-bottom: 8px;
-                }
-                
-                .warning-icon {
-                    font-size: 18px;
-                    margin-right: 8px;
-                }
-                
-                .warning-title {
-                    font-weight: 600;
-                    color: #fbbf24;
-                }
-                
-                .warning-card.error .warning-title {
-                    color: #f87171;
-                }
-                
-                .warning-text {
-                    font-size: 12px;
-                    opacity: 0.9;
-                    line-height: 1.4;
-                    color: #cbd5e1;
-                }
-                
-                """.trimIndent()
-            } else {
-                """
-                body.light-theme {
-                    width: 400px;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                    margin: 0;
-                    padding: 20px;
-                    background: #ffffff;
-                    color: #334155;
-                    border-radius: 8px;
-                }
-                
-                .header {
-                    text-align: center;
-                    margin-bottom: 15px;
-                    padding: 5px;
-                }
-                
-                .title {
-                    font-size: 14px;
-                    font-weight: normal;
-                    color: #1e293b;
-                }
-                
-                .info-card {
-                    background: rgba(250, 250, 250, 0.9);
-                    backdrop-filter: none;
-                    border-radius: 4px;
-                    padding: 12px;
-                    margin-bottom: 12px;
-                    border: 1px solid rgba(148, 163, 184, 0.2);
-                    box-shadow: none;
-                }
-                
-                .info-grid {
-                    display: grid;
-                    gap: 8px;
-                }
-                
-                .info-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 6px 0;
-                    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-                }
-                
-                .info-row:last-child {
-                    border-bottom: none;
-                }
-                
-                .info-label {
-                    font-weight: normal;
-                    opacity: 0.7;
-                    color: #6b7280;
-                    font-size: 12px;
-                }
-                
-                .info-value {
-                    font-weight: normal;
-                    color: #374151;
-                    font-size: 12px;
-                }
-                
-                .version-text {
-                    font-size: 12px;
-                }
-                
-                .success {
-                    color: #059669;
-                }
-                
-                .error {
-                    color: #dc2626;
-                }
-                
-                .warning-card {
-                    border-radius: 4px;
-                    padding: 8px;
-                    margin-bottom: 8px;
-                    backdrop-filter: none;
-                    box-shadow: none;
-                }
-                
-                .warning-card.warning {
-                    background: rgba(245, 158, 11, 0.1);
-                    border: 1px solid rgba(245, 158, 11, 0.3);
-                }
-                
-                .warning-card.error {
-                    background: rgba(239, 68, 68, 0.1);
-                    border: 1px solid rgba(239, 68, 68, 0.3);
-                }
-                
-                .warning-header {
-                    display: flex;
-                    align-items: center;
-                    margin-bottom: 8px;
-                }
-                
-                .warning-icon {
-                    font-size: 18px;
-                    margin-right: 8px;
-                }
-                
-                .warning-title {
-                    font-weight: 600;
-                    color: #d97706;
-                }
-                
-                .warning-card.error .warning-title {
-                    color: #dc2626;
-                }
-                
-                .warning-text {
-                    font-size: 12px;
-                    opacity: 0.9;
-                    line-height: 1.4;
-                    color: #475569;
-                }
-                """.trimIndent()
             }
         }
 
@@ -516,42 +250,33 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             clipboard.setContents(stringSelection, null)
         }
 
-        // Known Issues button
+        // Known Issues button - use standard IDE button styling
         private val knownIssuesButton = JButton("Known Issues").apply {
-            preferredSize = Dimension(120, 30)
-            font = font.deriveFont(12f)
-            isOpaque = false
-            isFocusPainted = false
-            border = javax.swing.BorderFactory.createEmptyBorder(6, 12, 6, 12)
             addActionListener {
-                BrowserUtil.browse("https://github.com/RooVetGit/Roo-Code/blob/main/docs/KNOWN_ISSUES.md")
+                BrowserUtil.browse("https://github.com/RooCodeInc/Roo-Code-JetBrains/blob/main/docs/KNOWN_ISSUES.md")
             }
         }
 
-        // Copy button
+        // Copy button - use standard IDE button styling
         private val copyButton = JButton("Copy Info").apply {
-            preferredSize = Dimension(120, 30)
-            font = font.deriveFont(12f)
-            isOpaque = false
-            isFocusPainted = false
-            border = javax.swing.BorderFactory.createEmptyBorder(6, 12, 6, 12)
             addActionListener { copySystemInfo() }
         }
 
-        // Button panel to hold both buttons side by side with modern spacing
+        // Button panel to hold both buttons side by side with proper spacing
         private val buttonPanel = JPanel().apply {
-            layout = BorderLayout()
-            border = javax.swing.BorderFactory.createEmptyBorder(10, 0, 0, 0)
-            add(knownIssuesButton, BorderLayout.WEST)
-            add(copyButton, BorderLayout.EAST)
+            layout = java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 10, 10)
+            border = BorderFactory.createEmptyBorder(20, 20, 20, 20)
+            add(knownIssuesButton)
+            add(copyButton)
         }
 
         private var dragDropHandler: DragDropHandler? = null
 
-        // Main panel
+        // Main panel with padding
         val content: JPanel = JPanel(BorderLayout()).apply {
             // Set content panel with both label and button
             contentPanel.layout = BorderLayout()
+            contentPanel.border = BorderFactory.createEmptyBorder(20, 20, 20, 20)
 
             // Check configuration status and show appropriate content
             if (configManager.isConfigurationLoaded() && configManager.isConfigurationValid()) {
@@ -846,34 +571,15 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
         private fun createPluginRow(pluginInfo: PluginInfo): JPanel {
             val rowPanel = JPanel(BorderLayout())
             
-            // Detect current theme for styling
-            val isDarkTheme = detectCurrentTheme()
-            
-            // Main content panel
+            // Main content panel - use default IDE styling
             val contentPanel = JPanel(BorderLayout()).apply {
-                // Special background for current running plugin
-                background = when {
-                    pluginInfo.isCurrent -> if (isDarkTheme) {
-                        java.awt.Color(0x10, 0xB9, 0x81, 0x15) // Light green background for current plugin
-                    } else {
-                        java.awt.Color(0x05, 0x96, 0x69, 0x10) // Light green background for current plugin
-                    }
-                    else -> if (isDarkTheme) {
-                        java.awt.Color(0x2A, 0x2A, 0x2A, 0x80)
-                    } else {
-                        java.awt.Color(0xFF, 0xFF, 0xFF, 0x80)
-                    }
-                }
+                // Use default panel background from IDE theme
+                isOpaque = true
                 
-                // Special border for current running plugin
-                val borderColor = when {
-                    pluginInfo.isCurrent -> if (isDarkTheme) java.awt.Color(0x10, 0xB9, 0x81) else java.awt.Color(0x05, 0x96, 0x69)
-                    else -> if (isDarkTheme) java.awt.Color(0x40, 0x40, 0x40) else java.awt.Color(0xE5, 0xE7, 0xEB)
-                }
+                // Simple border without custom colors
                 val borderWidth = if (pluginInfo.isCurrent) 2 else 1
-                
                 border = BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(borderColor, borderWidth),
+                    BorderFactory.createLineBorder(javax.swing.UIManager.getColor("Separator.foreground"), borderWidth),
                     javax.swing.BorderFactory.createEmptyBorder(12, 16, 12, 16)
                 )
             }
@@ -896,10 +602,11 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             }
             val nameLabel = JLabel("$statusIcon $nameText").apply {
                 font = font.deriveFont(15f).deriveFont(java.awt.Font.BOLD)
+                // Use default label foreground from IDE theme
                 foreground = if (pluginInfo.isAvailable) {
-                    if (isDarkTheme) java.awt.Color(0xF8, 0xFA, 0xFC) else java.awt.Color(0x1E, 0x29, 0x3B)
+                    javax.swing.UIManager.getColor("Label.foreground")
                 } else {
-                    if (isDarkTheme) java.awt.Color(0x64, 0x74, 0x8B) else java.awt.Color(0x94, 0xA3, 0xB8)
+                    javax.swing.UIManager.getColor("Label.disabledForeground")
                 }
             }
 
@@ -908,17 +615,11 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             buttonPanel.layout = javax.swing.BoxLayout(buttonPanel, javax.swing.BoxLayout.X_AXIS)
             buttonPanel.isOpaque = false
 
-            // VSIX upload button
+            // VSIX upload button - use standard IDE button styling
             val uploadButton = JButton("📦 Install From VSIX").apply {
-                preferredSize = JBUI.size(160, 36)
-                font = font.deriveFont(11f)
-                isFocusPainted = false
-                isOpaque = false
+                font = JBFont.label()
                 isEnabled = true
-                
-                foreground = if (isDarkTheme) java.awt.Color(0xCB, 0xD5, 0xE1) else java.awt.Color(0x47, 0x56, 0x69)
-                background = if (isDarkTheme) java.awt.Color(0x3E, 0x3E, 0x3E) else java.awt.Color(0xF1, 0xF5, 0xF9)
-                border = BorderFactory.createEmptyBorder(4, 6, 4, 6)
+                isFocusPainted = false
                 
                 addActionListener {
                     uploadVsixForPlugin(pluginInfo.id, pluginInfo.displayName)
@@ -940,10 +641,11 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             }
             val descLabel = JLabel(descriptionText).apply {
                 font = font.deriveFont(12f)
+                // Use default label foreground from IDE theme
                 foreground = if (pluginInfo.isAvailable) {
-                    if (isDarkTheme) java.awt.Color(0xCB, 0xD5, 0xE1) else java.awt.Color(0x47, 0x56, 0x69)
+                    javax.swing.UIManager.getColor("Label.foreground")
                 } else {
-                    if (isDarkTheme) java.awt.Color(0x64, 0x74, 0x8B) else java.awt.Color(0x94, 0xA3, 0xB8)
+                    javax.swing.UIManager.getColor("Label.disabledForeground")
                 }
             }
 
@@ -962,23 +664,22 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                     
                     override fun mouseEntered(e: java.awt.event.MouseEvent) {
                         contentPanel.cursor = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR)
-                        // Add hover effect
-                        if (isDarkTheme) {
-                            contentPanel.background = java.awt.Color(0x1E, 0x3A, 0x8A, 0x20)
-                        } else {
-                            contentPanel.background = java.awt.Color(0xDB, 0xEA, 0xFE, 0x80)
-                        }
+                        // Simple hover border effect using IDE theme colors
+                        contentPanel.border = BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(javax.swing.UIManager.getColor("Focus.borderColor") ?: javax.swing.UIManager.getColor("Separator.foreground"), 2),
+                            javax.swing.BorderFactory.createEmptyBorder(12, 16, 12, 16)
+                        )
                         contentPanel.repaint()
                     }
                     
                     override fun mouseExited(e: java.awt.event.MouseEvent) {
                         contentPanel.cursor = java.awt.Cursor.getDefaultCursor()
-                        // Remove hover effect
-                        if (isDarkTheme) {
-                            contentPanel.background = java.awt.Color(0x2A, 0x2A, 0x2A, 0x80)
-                        } else {
-                            contentPanel.background = java.awt.Color(0xFF, 0xFF, 0xFF, 0x80)
-                        }
+                        // Restore normal border
+                        val borderWidth = if (pluginInfo.isCurrent) 2 else 1
+                        contentPanel.border = BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(javax.swing.UIManager.getColor("Separator.foreground"), borderWidth),
+                            javax.swing.BorderFactory.createEmptyBorder(12, 16, 12, 16)
+                        )
                         contentPanel.repaint()
                     }
                 })
@@ -1094,22 +795,13 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
          * Get theme-adaptive color for status indicators
          */
         private fun getThemeAdaptiveColor(isDarkTheme: Boolean, colorType: String): java.awt.Color {
-            return if (isDarkTheme) {
-                when (colorType) {
-                    "success" -> java.awt.Color(16, 185, 129) // Green for dark theme
-                    "warning" -> java.awt.Color(251, 191, 36) // Yellow for dark theme
-                    "error" -> java.awt.Color(239, 68, 68)   // Red for dark theme
-                    "info" -> java.awt.Color(59, 130, 246)   // Blue for dark theme
-                    else -> java.awt.Color(148, 163, 184)    // Default gray for dark theme
-                }
-            } else {
-                when (colorType) {
-                    "success" -> java.awt.Color(5, 150, 105)  // Green for light theme
-                    "warning" -> java.awt.Color(217, 119, 6)  // Yellow for light theme
-                    "error" -> java.awt.Color(220, 38, 38)    // Red for light theme
-                    "info" -> java.awt.Color(37, 99, 235)     // Blue for light theme
-                    else -> java.awt.Color(100, 116, 139)     // Default gray for light theme
-                }
+            // Try to use IDE theme colors first, fallback to simple defaults
+            return when (colorType) {
+                "success" -> javax.swing.UIManager.getColor("Actions.Green") ?: java.awt.Color(0, 128, 0)
+                "warning" -> javax.swing.UIManager.getColor("Actions.Yellow") ?: java.awt.Color(255, 165, 0)
+                "error" -> javax.swing.UIManager.getColor("Actions.Red") ?: java.awt.Color(255, 0, 0)
+                "info" -> javax.swing.UIManager.getColor("Actions.Blue") ?: java.awt.Color(0, 0, 255)
+                else -> javax.swing.UIManager.getColor("Label.foreground") ?: java.awt.Color(128, 128, 128)
             }
         }
         
