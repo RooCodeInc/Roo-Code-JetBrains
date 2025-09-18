@@ -277,6 +277,8 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
          * @param data HTML update data
          */
     fun updateWebViewHtml(data: WebviewHtmlUpdateData) {
+        data.htmlContent = data.htmlContent.replace("/jetbrains/resources/roocode/", "./")
+        data.htmlContent = data.htmlContent.replace("<html lang=\"en\">", "<html lang=\"en\" style=\"background: var(--vscode-sideBar-background);\">")
         val encodedState = getLatestWebView()?.state.toString().replace("\"", "\\\"")
         // Support both <script nonce="..."> and <script type="text/javascript" nonce="..."> formats
         val mRst = """<script(?:\s+type="text/javascript")?\s+nonce="([A-Za-z0-9]{32})">""".toRegex().find(data.htmlContent)
@@ -580,7 +582,8 @@ class WebViewInstance(
                                         // Add default_themes.css content
                                         defaultStylesElement.textContent = `
                                             html {
-                                                scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
+                                                background: var(--vscode-sideBar-background);
+                                                scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-sideBar-background);
                                             }
                                             
                                             body {
