@@ -236,6 +236,7 @@ dependencies {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
+    pluginName.set("RooCode")
     version.set(properties("platformVersion"))
     type.set(properties("platformType"))
 
@@ -254,7 +255,7 @@ tasks {
     register("generateConfigProperties") {
         description = "Generate properties file containing plugin configuration"
         doLast {
-            val configDir = File("$projectDir/src/main/resources/com/sina/weibo/agent/plugin/config")
+            val configDir = File("$projectDir/src/main/resources/com/roocode/jetbrains/plugin/config")
             configDir.mkdirs()
 
             val configFile = File(configDir, "plugin.properties")
