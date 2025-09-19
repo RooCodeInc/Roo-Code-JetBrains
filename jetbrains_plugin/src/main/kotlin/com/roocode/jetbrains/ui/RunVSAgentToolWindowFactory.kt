@@ -272,21 +272,25 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
 
         private var dragDropHandler: DragDropHandler? = null
 
-        // Main panel with padding
         val content: JPanel = JPanel(BorderLayout()).apply {
-            // Set content panel with both label and button
             contentPanel.layout = BorderLayout()
-            contentPanel.border = BorderFactory.createEmptyBorder(20, 20, 20, 20)
 
             // Check configuration status and show appropriate content
             if (configManager.isConfigurationLoaded() && configManager.isConfigurationValid()) {
-                // Configuration is valid, show system info
-                contentPanel.add(placeholderLabel, BorderLayout.CENTER)
-                contentPanel.add(buttonPanel, BorderLayout.SOUTH)
+                
+                val initPanel = JPanel(BorderLayout()).apply {
+                    border = BorderFactory.createEmptyBorder(20, 20, 20, 20)
+                    add(placeholderLabel, BorderLayout.CENTER)
+                    add(buttonPanel, BorderLayout.SOUTH)
+                }
+                contentPanel.add(initPanel, BorderLayout.CENTER)
             } else {
-                // Configuration is invalid, show plugin selection
-                contentPanel.add(pluginSelectionPanel, BorderLayout.CENTER)
-                contentPanel.add(configStatusPanel, BorderLayout.SOUTH)
+                val selectionPanel = JPanel(BorderLayout()).apply {
+                    border = BorderFactory.createEmptyBorder(20, 20, 20, 20)
+                    add(pluginSelectionPanel, BorderLayout.CENTER)
+                    add(configStatusPanel, BorderLayout.SOUTH)
+                }
+                contentPanel.add(selectionPanel, BorderLayout.CENTER)
             }
 
             add(contentPanel, BorderLayout.CENTER)
@@ -294,8 +298,12 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
 
         init {
             // Always show system info panel (no plugin selection needed)
-            contentPanel.add(placeholderLabel, BorderLayout.CENTER)
-            contentPanel.add(buttonPanel, BorderLayout.SOUTH)
+            val initPanel = JPanel(BorderLayout()).apply {
+                border = BorderFactory.createEmptyBorder(20, 20, 20, 20)
+                add(placeholderLabel, BorderLayout.CENTER)
+                add(buttonPanel, BorderLayout.SOUTH)
+            }
+            contentPanel.add(initPanel, BorderLayout.CENTER)
             
             // Don't auto-start here - WecoderPlugin will handle startup
             // The plugin will start automatically if configuration is valid
@@ -453,6 +461,11 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
                 if (component !== webViewManager.getLatestWebView()?.browser?.component) {
                     contentPanel.remove(component)
                 }
+            }
+
+            webViewManager.getLatestWebView()?.let { webView ->
+                contentPanel.remove(webView.browser.component)
+                contentPanel.add(webView.browser.component, BorderLayout.CENTER)
             }
 
             // Relayout
@@ -941,8 +954,13 @@ class RunVSAgentToolWindowFactory : ToolWindowFactory {
             contentPanel.removeAll()
             
             // Always show system info panel (Roo Code is always configured)
-            contentPanel.add(placeholderLabel, BorderLayout.CENTER)
-            contentPanel.add(buttonPanel, BorderLayout.SOUTH)
+            
+            val initPanel = JPanel(BorderLayout()).apply {
+                border = BorderFactory.createEmptyBorder(20, 20, 20, 20)
+                add(placeholderLabel, BorderLayout.CENTER)
+                add(buttonPanel, BorderLayout.SOUTH)
+            }
+            contentPanel.add(initPanel, BorderLayout.CENTER)
             logger.info("Showing system info panel - Roo Code auto-configured")
             
             contentPanel.revalidate()

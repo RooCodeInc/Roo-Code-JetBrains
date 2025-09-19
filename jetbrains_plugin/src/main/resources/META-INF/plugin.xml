@@ -110,11 +110,6 @@ SPDX-License-Identifier: Apache-2.0
                    class="com.roocode.jetbrains.extensions.ui.actions.DynamicExtensionActionsGroup"
                    text="Extension Actions"
                    description="Dynamic extension-specific actions" />
-            <action id="RunVSAgent.extensionStatusChecker"
-                    icon="AllIcons.General.InspectionsOK"
-                    class="com.roocode.jetbrains.extensions.ui.actions.ExtensionStatusChecker"
-                    text="Check Extension Status"
-                    description="Check extension status and diagnose issues" />
         </group>
 
         <group id="RunVSAgent.RightClickMenu" text="Roo Code" description="Roo Code AI Assistant"  icon="/icons/roo-logo.svg" popup="true">
