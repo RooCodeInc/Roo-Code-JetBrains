@@ -48,3 +48,6 @@ src/main/resources/com/roocode/jetbrains/plugin/config/plugin.properties
 roo-code-messages.log
 /src/main/resources/roo-code/*
 prodDep.txt
+
+### Backup files ###
+*.bak

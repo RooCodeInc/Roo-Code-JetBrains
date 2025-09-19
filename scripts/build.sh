@@ -245,9 +245,6 @@ update_gradle_version() {
         
         # Update the version in gradle.properties
         if [[ "$DRY_RUN" != "true" ]]; then
-            # Create a backup first
-            cp "$gradle_props" "${gradle_props}.bak"
-            
             # Update the pluginVersion line
             sed -i.tmp "s/^pluginVersion=.*/pluginVersion=${ROO_EXTENSION_VERSION}/" "$gradle_props"
             rm "${gradle_props}.tmp" 2>/dev/null || true
